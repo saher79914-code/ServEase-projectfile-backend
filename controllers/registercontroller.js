@@ -60,58 +60,194 @@ const registerCustomer = async (req, res) => {
 
 // ── REGISTER PROVIDER ──────────────────────────────────────
 const registerProvider = async (req, res) => {
+
   try {
-    const { full_name, email, phone, cnic, address, password, category, years_of_experience, bio } = req.body;
 
-    if (!full_name || !email || !phone || !cnic || !address || !password || !category || years_of_experience === undefined || !bio)
-      return res.status(400).json({ success: false, message: "All fields are required" });
+    const {
+      full_name,
+      email,
+      phone,
+      cnic,
+      address,
+      password,
+      category,
+      years_of_experience,
+      bio
+    } = req.body;
 
-    if (!/^[\w\-.]+@([\w\-]+\.)+[\w]{2,4}$/.test(email))
-      return res.status(400).json({ success: false, message: "Enter a valid email" });
+    // VALIDATIONS
+    if (
+      !full_name ||
+      !email ||
+      !phone ||
+      !cnic ||
+      !address ||
+      !password ||
+      !category ||
+      years_of_experience === undefined ||
+      !bio
+    ) {
 
-    if (!/^\d{5}-\d{7}-\d{1}$/.test(cnic))
-      return res.status(400).json({ success: false, message: "CNIC format: XXXXX-XXXXXXX-X" });
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required"
+      });
+    }
 
-    if (password.length < 6)
-      return res.status(400).json({ success: false, message: "Password min 6 characters" });
+    if (
+      !/^[\w\-.]+@([\w\-]+\.)+[\w]{2,4}$/.test(email)
+    ) {
 
-    const allowed = ["Crafts", "Fashion", "Education", "Cleaning", "Beauty", "Other"];
-    if (!allowed.includes(category))
-      return res.status(400).json({ success: false, message: "Invalid category" });
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid email"
+      });
+    }
 
-    const years = parseInt(years_of_experience);
-    if (isNaN(years) || years < 0)
-      return res.status(400).json({ success: false, message: "Invalid years of experience" });
+    if (
+      !/^\d{5}-\d{7}-\d{1}$/.test(cnic)
+    ) {
 
-    const [byEmail] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
-    if (byEmail.length > 0)
-      return res.status(409).json({ success: false, message: "Email already registered" });
+      return res.status(400).json({
+        success: false,
+        message: "CNIC format: XXXXX-XXXXXXX-X"
+      });
+    }
 
-    const [byCnic] = await db.query("SELECT id FROM users WHERE cnic = ?", [cnic]);
-    if (byCnic.length > 0)
-      return res.status(409).json({ success: false, message: "CNIC already registered" });
+    if (password.length < 6) {
 
-    const hashed = await bcrypt.hash(password, 12);
+      return res.status(400).json({
+        success: false,
+        message: "Password min 6 characters"
+      });
+    }
 
-    const [result] = await db.query(
-      `INSERT INTO users
-        (full_name, email, phone, cnic, address, password, role, category, years_of_experience, bio, is_approved)
-       VALUES (?, ?, ?, ?, ?, ?, 'provider', ?, ?, ?, 0)`,
-      [full_name, email, phone, cnic, address, hashed, category, years, bio]
+    const allowed = [
+      "Crafts",
+      "Fashion",
+      "Education",
+      "Cleaning",
+      "Beauty",
+      "Other"
+    ];
+
+    if (!allowed.includes(category)) {
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category"
+      });
+    }
+
+    const years =
+      parseInt(years_of_experience);
+
+    if (isNaN(years) || years < 0) {
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid years of experience"
+      });
+    }
+
+    // CHECK EMAIL
+    const [byEmail] =
+      await db.query(
+        "SELECT id FROM users WHERE email = ?",
+        [email]
+      );
+
+    if (byEmail.length > 0) {
+
+      return res.status(409).json({
+        success: false,
+        message: "Email already registered"
+      });
+    }
+
+    // HASH PASSWORD
+    const hashed =
+      await bcrypt.hash(password, 12);
+
+    // INSERT USER
+    const [result] =
+      await db.query(
+        `
+        INSERT INTO users
+        (
+          full_name,
+          email,
+          phone,
+          address,
+          password,
+          role
+        )
+        VALUES (?, ?, ?, ?, ?, 'provider')
+        `,
+        [
+          full_name,
+          email,
+          phone,
+          address,
+          hashed
+        ]
+      );
+
+    const userId =
+      result.insertId;
+
+    // INSERT PROVIDER PROFILE
+    await db.query(
+      `
+      INSERT INTO provider_profiles
+      (
+        user_id,
+        cnic,
+        category,
+        years_of_experience,
+        bio,
+        approval_status
+      )
+      VALUES (?, ?, ?, ?, ?, 'pending')
+      `,
+      [
+        userId,
+        cnic,
+        category,
+        years,
+        bio
+      ]
     );
 
-    const user = {
-      id: result.insertId, full_name, email, phone, cnic, address,
-      role: "provider", category, years_of_experience: years, bio, is_approved: false,
-    };
-    return sendTokenResponse(res, 201, user, "provider");
+    return res.status(201).json({
+
+      success: true,
+
+      message:
+      "Provider Registered Successfully",
+
+      data: {
+        id: userId,
+        full_name,
+        email,
+        role: "provider",
+        approval_status: "pending"
+      }
+    });
 
   } catch (err) {
-    console.error("registerProvider error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+
+    console.error(
+      "registerProvider error:",
+      err
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };
-
 // ── REGISTER ADMIN ─────────────────────────────────────────
 const registerAdmin = async (req, res) => {
   try {
@@ -188,7 +324,13 @@ const login = async (req, res) => {
         message: "Account pending admin approval",
       });
     }
-
+// Blocked user check
+    if (user.is_blocked == 1) {
+    return res.status(403).json({
+        success: false,
+        message: "Your account is blocked"
+    });
+}
     const { password: pwd, ...safeUser } = user;
 
     return sendTokenResponse(res, 200, safeUser, user.role);

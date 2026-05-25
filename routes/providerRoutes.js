@@ -1,16 +1,29 @@
 const express = require("express");
+
 const router = express.Router();
 
 const {
-  getProviders,
-  createProvider,
-  updateProvider,
-  deleteProvider
+  getPendingProviders,
+  approveProvider,
+  rejectProvider
 } = require("../controllers/providerController");
 
-router.get("/", getProviders);
-router.post("/", createProvider);
-router.put("/:id", updateProvider);
-router.delete("/:id", deleteProvider);
+// GET PENDING PROVIDERS
+router.get(
+  "/pending",
+  getPendingProviders
+);
+
+// APPROVE PROVIDER
+router.put(
+  "/approve/:id",
+  approveProvider
+);
+
+// REJECT PROVIDER
+router.put(
+  "/reject/:id",
+  rejectProvider
+);
 
 module.exports = router;

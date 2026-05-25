@@ -1,173 +1,181 @@
-const db = require('../config/db');
+const db = require("../config/db");
 
-
-// ============================
 // GET ALL SERVICES
-// ============================
-const getServices = (req, res) => {
-  const sql = 'SELECT * FROM services ORDER BY id DESC';
+exports.getAllServices = async (req, res) => {
+    try {
 
-  db.query(sql, (err, result) => {
-    if (err) {
-      return res.status(500).json({
-        message: 'Fetch failed',
-        error: err,
-      });
-    }
+        const [services] = await db.query(
+            "SELECT * FROM services ORDER BY id DESC"
+        );
 
-    res.status(200).json(result);
-  });
-};
-
-
-// ============================
-// CREATE SERVICE
-// ============================
-const createService = (req, res) => {
-  const {
-    name,
-    description,
-    price,
-    category,
-    icon,
-    is_active,
-  } = req.body;
-
-  const sql = `
-    INSERT INTO services
-    (name, description, price, category, icon, is_active)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-
-  db.query(
-    sql,
-    [name, description, price, category, icon, is_active],
-    (err, result) => {
-      if (err) {
-        return res.status(500).json({
-          message: 'Create failed',
-          error: err,
+        res.status(200).json({
+            success: true,
+            data: services
         });
-      }
 
-      res.status(201).json({
-        message: 'Service created',
-        id: result.insertId,
-      });
+    } catch (error) {
+
+        console.error("GET SERVICES ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
     }
-  );
 };
 
+// ADD SERVICE
+exports.addService = async (req, res) => {
+    try {
 
-// ============================
+        const {
+            name,
+            description,
+            price,
+            category,
+            icon
+        } = req.body;
+
+        const sql = `
+            INSERT INTO services
+            (name, description, price, category, icon)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        await db.query(sql, [
+            name,
+            description,
+            price,
+            category,
+            icon
+        ]);
+
+        res.status(201).json({
+            success: true,
+            message: "Service added successfully"
+        });
+
+    } catch (error) {
+
+        console.error("ADD SERVICE ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+    }
+};
+
 // UPDATE SERVICE
-// ============================
-const updateService = (req, res) => {
-  const { id } = req.params;
+exports.updateService = async (req, res) => {
+    try {
 
-  const {
-    name,
-    description,
-    price,
-    category,
-    icon,
-    is_active,
-  } = req.body;
+        const serviceId = req.params.id;
 
-  const sql = `
-    UPDATE services
-    SET
-      name = ?,
-      description = ?,
-      price = ?,
-      category = ?,
-      icon = ?,
-      is_active = ?
-    WHERE id = ?
-  `;
+        const {
+            name,
+            description,
+            price,
+            category,
+            icon
+        } = req.body;
 
-  db.query(
-    sql,
-    [
-      name,
-      description,
-      price,
-      category,
-      icon,
-      is_active,
-      id,
-    ],
-    (err) => {
-      if (err) {
-        return res.status(500).json({
-          message: 'Update failed',
-          error: err,
+        const sql = `
+            UPDATE services
+            SET
+                name = ?,
+                description = ?,
+                price = ?,
+                category = ?,
+                icon = ?
+            WHERE id = ?
+        `;
+
+        await db.query(sql, [
+            name,
+            description,
+            price,
+            category,
+            icon,
+            serviceId
+        ]);
+
+        res.status(200).json({
+            success: true,
+            message: "Service updated"
         });
-      }
 
-      res.status(200).json({
-        message: 'Service updated',
-      });
+    } catch (error) {
+
+        console.error("UPDATE SERVICE ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
     }
-  );
 };
 
-
-// ============================
 // DELETE SERVICE
-// ============================
-const deleteService = (req, res) => {
-  const { id } = req.params;
+exports.deleteService = async (req, res) => {
+    try {
 
-  const sql = 'DELETE FROM services WHERE id = ?';
+        const serviceId = req.params.id;
 
-  db.query(sql, [id], (err) => {
-    if (err) {
-      return res.status(500).json({
-        message: 'Delete failed',
-        error: err,
-      });
+        await db.query(
+            "DELETE FROM services WHERE id = ?",
+            [serviceId]
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Service deleted"
+        });
+
+    } catch (error) {
+
+        console.error("DELETE SERVICE ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
     }
-
-    res.status(200).json({
-      message: 'Service deleted',
-    });
-  });
 };
 
+// TOGGLE SERVICE STATUS
+exports.toggleServiceStatus = async (req, res) => {
+    try {
 
-// ============================
-// TOGGLE ACTIVE
-// ============================
-const toggleService = (req, res) => {
-  const { id } = req.params;
-  const { is_active } = req.body;
+        const serviceId = req.params.id;
 
-  const sql = `
-    UPDATE services
-    SET is_active = ?
-    WHERE id = ?
-  `;
+        const [service] = await db.query(
+            "SELECT is_active FROM services WHERE id = ?",
+            [serviceId]
+        );
 
-  db.query(sql, [is_active, id], (err) => {
-    if (err) {
-      return res.status(500).json({
-        message: 'Toggle failed',
-        error: err,
-      });
+        const currentStatus = service[0].is_active;
+
+        const newStatus = currentStatus === 1 ? 0 : 1;
+
+        await db.query(
+            "UPDATE services SET is_active = ? WHERE id = ?",
+            [newStatus, serviceId]
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Service status updated",
+            is_active: newStatus
+        });
+
+    } catch (error) {
+
+        console.error("TOGGLE SERVICE ERROR:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
     }
-
-    res.status(200).json({
-      message: 'Status updated',
-    });
-  });
-};
-
-
-module.exports = {
-  getServices,
-  createService,
-  updateService,
-  deleteService,
-  toggleService,
 };

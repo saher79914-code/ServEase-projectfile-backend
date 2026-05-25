@@ -1,29 +1,24 @@
-const express = require('express');
-
+const express = require("express");
 const router = express.Router();
 
 const {
-  getServices,
-  createService,
-  updateService,
-  deleteService,
-  toggleService,
-} = require('../controllers/serviceController');
+    getAllServices,
+    addService,
+    updateService,
+    deleteService,
+    toggleServiceStatus
+} = require("../controllers/serviceController");
 
+// routes
 
-// GET
-router.get('/', getServices);
+router.get("/", getAllServices);
 
-// CREATE
-router.post('/', createService);
+router.post("/", addService);
 
-// UPDATE
-router.put('/:id', updateService);
+router.put("/:id", updateService);
 
-// DELETE
-router.delete('/:id', deleteService);
+router.delete("/:id", deleteService);
 
-// TOGGLE ACTIVE
-router.put('/:id/toggle', toggleService);
+router.put("/toggle/:id", toggleServiceStatus);
 
 module.exports = router;
