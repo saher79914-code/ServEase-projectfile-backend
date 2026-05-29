@@ -22,15 +22,15 @@ app.use(express.urlencoded({
 app.use("/", require("./routes/registerRoutes"));
 app.use("/services", require("./routes/serviceRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
-app.use("/api/admin/providers", require("./routes/providerRoutes"));
+app.use("/api/admin/provider/register", require("./routes/registerRoutes"));
 app.use("/api/admin/users", require("./routes/userRoutes"));
 app.use("/api/admin/complaints", require("./routes/complaintRoutes"));
 app.use("/api/admin/notifications", require("./routes/notificationRoutes"));
 app.use("/api/admin/services", require("./routes/serviceRoutes"));
 app.use( "/api/admin",require("./routes/adminProfileRoutes"));
 app.use( "/uploads",express.static("uploads"));
-app.use("/api/providers", require("./routes/providerRoutes")
-);
+app.use("/api/admin/providers", require("./routes/providerRoutes"));
+app.use("/api/provider", require("./routes/registerRoutes"));
 
 // Server
 app.listen(PORT, () => {

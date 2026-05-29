@@ -4,18 +4,22 @@ const db = require("../config/db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 const JWT_EXPIRES_IN = "7d";
-// ── Helper: Generate Token ─────────────────────────────────
+
+// ── Helper: Generate Token ─────────────────────────────────────────
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-// ── Helper: Send Token Response ────────────────────────────
+// ── Helper: Send Token Response ────────────────────────────────────
 const sendTokenResponse = (res, statusCode, user, role) => {
   const token = generateToken(user.id, role);
   res.status(statusCode).json({ success: true, token, role, user });
 };
 
-// ── REGISTER CUSTOMER ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// REGISTER CUSTOMER
+// POST /auth/register/customer
+// ═══════════════════════════════════════════════════════════════════
 const registerCustomer = async (req, res) => {
   try {
     const { full_name, email, phone, cnic, address, password } = req.body;
@@ -58,11 +62,13 @@ const registerCustomer = async (req, res) => {
   }
 };
 
-// ── REGISTER PROVIDER ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// REGISTER PROVIDER
+// POST /auth/register/provider
+// Single users table — sab kuch yahan save hoga
+// ═══════════════════════════════════════════════════════════════════
 const registerProvider = async (req, res) => {
-
   try {
-
     const {
       full_name,
       email,
@@ -70,185 +76,77 @@ const registerProvider = async (req, res) => {
       cnic,
       address,
       password,
-      category,
+      service_id,
       years_of_experience,
-      bio
+      bio,
     } = req.body;
 
-    // VALIDATIONS
-    if (
-      !full_name ||
-      !email ||
-      !phone ||
-      !cnic ||
-      !address ||
-      !password ||
-      !category ||
-      years_of_experience === undefined ||
-      !bio
-    ) {
+    console.log("registerProvider called with:", req.body);
 
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required"
-      });
-    }
+    // ── Validation ─────────────────────────────────────────────────
+    if (!full_name || !email || !phone || !cnic || !address || !password)
+      return res.status(400).json({ success: false, message: "All fields are required" });
 
-    if (
-      !/^[\w\-.]+@([\w\-]+\.)+[\w]{2,4}$/.test(email)
-    ) {
+    if (!/^[\w\-.]+@([\w\-]+\.)+[\w]{2,4}$/.test(email))
+      return res.status(400).json({ success: false, message: "Enter a valid email" });
 
-      return res.status(400).json({
-        success: false,
-        message: "Enter a valid email"
-      });
-    }
+    if (!/^\d{5}-\d{7}-\d{1}$/.test(cnic))
+      return res.status(400).json({ success: false, message: "CNIC format: XXXXX-XXXXXXX-X" });
 
-    if (
-      !/^\d{5}-\d{7}-\d{1}$/.test(cnic)
-    ) {
+    if (password.length < 6)
+      return res.status(400).json({ success: false, message: "Password min 6 characters" });
 
-      return res.status(400).json({
-        success: false,
-        message: "CNIC format: XXXXX-XXXXXXX-X"
-      });
-    }
+    // ── Check duplicate email / CNIC ───────────────────────────────
+    const [existing] = await db.query(
+      `SELECT id FROM users WHERE email = ? OR cnic = ? LIMIT 1`,
+      [email, cnic]
+    );
+    if (existing.length > 0)
+      return res.status(409).json({ success: false, message: "Email or CNIC already registered" });
 
-    if (password.length < 6) {
+    // ── Hash password ──────────────────────────────────────────────
+    const hashed = await bcrypt.hash(password, 12);
 
-      return res.status(400).json({
-        success: false,
-        message: "Password min 6 characters"
-      });
-    }
+    // ── Insert into users ──────────────────────────────────────────
+    const [userResult] = await db.query(
+      `INSERT INTO users
+        (full_name, email, phone, cnic, address, password, role)
+       VALUES (?, ?, ?, ?, ?, ?, 'provider')`,
+      [full_name, email, phone, cnic, address, hashed]
+    );
 
-    const allowed = [
-      "Crafts",
-      "Fashion",
-      "Education",
-      "Cleaning",
-      "Beauty",
-      "Other"
-    ];
+    const userId = userResult.insertId;
 
-    if (!allowed.includes(category)) {
-
-      return res.status(400).json({
-        success: false,
-        message: "Invalid category"
-      });
-    }
-
-    const years =
-      parseInt(years_of_experience);
-
-    if (isNaN(years) || years < 0) {
-
-      return res.status(400).json({
-        success: false,
-        message: "Invalid years of experience"
-      });
-    }
-
-    // CHECK EMAIL
-    const [byEmail] =
-      await db.query(
-        "SELECT id FROM users WHERE email = ?",
-        [email]
-      );
-
-    if (byEmail.length > 0) {
-
-      return res.status(409).json({
-        success: false,
-        message: "Email already registered"
-      });
-    }
-
-    // HASH PASSWORD
-    const hashed =
-      await bcrypt.hash(password, 12);
-
-    // INSERT USER
-    const [result] =
-      await db.query(
-        `
-        INSERT INTO users
-        (
-          full_name,
-          email,
-          phone,
-          address,
-          password,
-          role
-        )
-        VALUES (?, ?, ?, ?, ?, 'provider')
-        `,
-        [
-          full_name,
-          email,
-          phone,
-          address,
-          hashed
-        ]
-      );
-
-    const userId =
-      result.insertId;
-
-    // INSERT PROVIDER PROFILE
+    // ── Insert into provider_profiles ─────────────────────────────
     await db.query(
-      `
-      INSERT INTO provider_profiles
-      (
-        user_id,
-        cnic,
-        category,
-        years_of_experience,
-        bio,
-        approval_status
-      )
-      VALUES (?, ?, ?, ?, ?, 'pending')
-      `,
-      [
-        userId,
-        cnic,
-        category,
-        years,
-        bio
-      ]
+      `INSERT INTO provider_profiles
+        (user_id, service_id, years_of_experience, bio)
+       VALUES (?, ?, ?, ?)`,
+      [userId, service_id ?? null, years_of_experience ?? 0, bio ?? null]
     );
 
     return res.status(201).json({
-
       success: true,
-
-      message:
-      "Provider Registered Successfully",
-
+      message: "Provider registered successfully. Awaiting admin approval.",
       data: {
         id: userId,
         full_name,
         email,
         role: "provider",
-        approval_status: "pending"
-      }
+        approval_status: "pending",
+      },
     });
 
   } catch (err) {
-
-    console.error(
-      "registerProvider error:",
-      err
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    console.error("registerProvider error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
-// ── REGISTER ADMIN ─────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════════════
+// REGISTER ADMIN
+// POST /auth/register/admin
+// ═══════════════════════════════════════════════════════════════════
 const registerAdmin = async (req, res) => {
   try {
     const { full_name, email, password, master_key } = req.body;
@@ -282,70 +180,56 @@ const registerAdmin = async (req, res) => {
   }
 };
 
-// ── LOGIN ──────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// LOGIN — single endpoint for all roles
+// POST /auth/login
+// Body: { email, password }  — role auto-detect from DB
+// ═══════════════════════════════════════════════════════════════════
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password required",
-      });
-    }
+    if (!email || !password)
+      return res.status(400).json({ success: false, message: "Email and password required" });
 
     const [rows] = await db.query(
       "SELECT * FROM users WHERE email = ? LIMIT 1",
       [email]
     );
 
-    if (rows.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
+    if (rows.length === 0)
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
 
     const user = rows[0];
 
+    // ── Password check ─────────────────────────────────────────────
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
-    }
+   // ── Provider approval check ────────────────────────────────────
+    //is_approved: 0=Pending, 2=Approved, 3=Rejected
+    if (user.role === "provider" && user.is_approved !== 2) 
 
-    // Provider approval check
-    if (user.role === "provider" && !user.is_approved == 2) {
-      return res.status(403).json({
-        success: false,
-        message: "Account pending admin approval",
-      });
-    }
-// Blocked user check
-    if (user.is_blocked == 1) {
-    return res.status(403).json({
-        success: false,
-        message: "Your account is blocked"
-    });
-}
-    const { password: pwd, ...safeUser } = user;
+    // ── Blocked user check ─────────────────────────────────────────
+    if (user.is_blocked == 1)
+      return res.status(403).json({ success: false, message: "Your account has been blocked" });
+
+    // ── Remove password before sending ────────────────────────────
+    const { password: _pwd, ...safeUser } = user;
 
     return sendTokenResponse(res, 200, safeUser, user.role);
 
   } catch (err) {
     console.error("login error:", err);
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// ── GET ME ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// GET ME — from JWT token
+// GET /auth/me
+// ═══════════════════════════════════════════════════════════════════
 const getMe = async (req, res) => {
   try {
     const { id, role } = req.user;
@@ -368,5 +252,4 @@ const getMe = async (req, res) => {
   }
 };
 
-// ── EXPORTS ────────────────────────────────────────────────
 module.exports = { registerCustomer, registerProvider, registerAdmin, login, getMe };

@@ -1,5 +1,5 @@
 // config/db.js
-const mysql = require("mysql2/promise"); // ← sirf yeh change karo
+const mysql = require("mysql2/promise"); 
 
 const db = mysql.createPool({
   host: "localhost",

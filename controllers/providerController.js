@@ -40,60 +40,64 @@ exports.getPendingProviders = async (req, res) => {
 
 // APPROVE PROVIDER
 exports.approveProvider = async (req, res) => {
-    try {
 
-        const userId = req.params.id;
+  try {
 
-        const sql = `
-            UPDATE provider_profiles
-            SET approval_status = 'approved'
-            WHERE user_id = ?
-        `;
+    const id = req.params.id;
 
-        await db.query(sql, [userId]);
+    await db.query(
+      `
+      UPDATE users
+      SET is_approved = 2
+      WHERE id = ?
+      `,
+      [id]
+    );
 
-        res.status(200).json({
-            success: true,
-            message: "Provider approved"
-        });
+    res.status(200).json({
+      success: true,
+      message: "Provider Approved"
+    });
 
-    } catch (error) {
+  } catch (error) {
 
-        console.error("Approve Provider Error:", error);
+    console.log(error);
 
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
 };
 
 // REJECT PROVIDER
 exports.rejectProvider = async (req, res) => {
-    try {
 
-        const userId = req.params.id;
+  try {
 
-        const sql = `
-            UPDATE provider_profiles
-            SET approval_status = 'rejected'
-            WHERE user_id = ?
-        `;
+    const id = req.params.id;
 
-        await db.query(sql, [userId]);
+    await db.query(
+      `
+      UPDATE users
+      SET is_approved = 0
+      WHERE id = ?
+      `,
+      [id]
+    );
 
-        res.status(200).json({
-            success: true,
-            message: "Provider rejected"
-        });
+    res.status(200).json({
+      success: true,
+      message: "Provider Rejected"
+    });
 
-    } catch (error) {
+  } catch (error) {
 
-        console.error("Reject Provider Error:", error);
+    console.log(error);
 
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
 };
