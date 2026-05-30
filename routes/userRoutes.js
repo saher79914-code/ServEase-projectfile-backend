@@ -2,17 +2,24 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    getAllUsers,
-    blockUser,
-    unblockUser
+  getAllUsers,
+  getBlockedUsers,
+  getUserById,
+  addUser,
+  blockUser,
+  unblockUser
 } = require("../controllers/userController");
-
-// routes
 
 router.get("/", getAllUsers);
 
-router.put("/block/:id", blockUser);
+router.get("/blocked", getBlockedUsers);
 
-router.put("/unblock/:id", unblockUser);
+router.get("/:id", getUserById);
+
+router.post("/", addUser);
+
+router.patch("/:id/block", blockUser);
+
+router.patch("/:id/unblock", unblockUser);
 
 module.exports = router;

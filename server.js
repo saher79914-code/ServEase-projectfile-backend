@@ -8,7 +8,7 @@ const PORT = 3000;
 // Middleware
 app.use(cors({
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // PATCH add kiya ✅
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -21,16 +21,24 @@ app.use(express.urlencoded({
 // Routes
 app.use("/", require("./routes/registerRoutes"));
 app.use("/services", require("./routes/serviceRoutes"));
+
 app.use("/api/admin", require("./routes/adminRoutes"));
-app.use("/api/admin/provider/register", require("./routes/registerRoutes"));
+app.use("/api/admin", require("./routes/adminProfileRoutes"));
+
 app.use("/api/admin/users", require("./routes/userRoutes"));
+
 app.use("/api/admin/complaints", require("./routes/complaintRoutes"));
 app.use("/api/admin/notifications", require("./routes/notificationRoutes"));
 app.use("/api/admin/services", require("./routes/serviceRoutes"));
-app.use( "/api/admin",require("./routes/adminProfileRoutes"));
-app.use( "/uploads",express.static("uploads"));
+
 app.use("/api/admin/providers", require("./routes/providerRoutes"));
+
 app.use("/api/provider", require("./routes/registerRoutes"));
+app.use("/api/provider", require("./routes/providerRoutes"));
+
+app.use("/api/users", require("./routes/userRoutes"));
+
+app.use("/uploads", express.static("uploads"));
 
 // Server
 app.listen(PORT, () => {

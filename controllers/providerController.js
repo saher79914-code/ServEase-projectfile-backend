@@ -47,9 +47,9 @@ exports.approveProvider = async (req, res) => {
 
     await db.query(
       `
-      UPDATE users
-      SET is_approved = 2
-      WHERE id = ?
+      UPDATE provider_profiles
+      SET approval_status = 'approved'
+      WHERE user_id = ?
       `,
       [id]
     );
@@ -69,7 +69,6 @@ exports.approveProvider = async (req, res) => {
     });
   }
 };
-
 // REJECT PROVIDER
 exports.rejectProvider = async (req, res) => {
 
@@ -79,9 +78,9 @@ exports.rejectProvider = async (req, res) => {
 
     await db.query(
       `
-      UPDATE users
-      SET is_approved = 0
-      WHERE id = ?
+      UPDATE provider_profiles
+      SET approval_status = 'rejected'
+      WHERE user_id = ?
       `,
       [id]
     );
@@ -98,6 +97,100 @@ exports.rejectProvider = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server Error"
+    });
+  }
+};
+
+exports.getAcceptanceCounts =
+async (req, res) => {
+
+  try {
+
+    const [approved] =
+    await db.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM provider_profiles
+      WHERE approval_status = 'approved'
+      `
+    );
+
+    const [rejected] =
+    await db.query(
+      `
+      SELECT COUNT(*) AS total
+      FROM provider_profiles
+      WHERE approval_status = 'rejected'
+      `
+    );
+
+    res.status(200).json({
+
+      success: true,
+
+      approved:
+      approved[0].total,
+
+      rejected:
+      rejected[0].total,
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Server Error",
+    });
+  }
+};
+exports.getAcceptanceList =
+async (req, res) => {
+
+  try {
+
+    const [result] =
+    await db.query(
+      `
+      SELECT
+      users.id,
+      users.full_name,
+      users.email,
+      provider_profiles.cnic_image,
+      provider_profiles.approval_status
+
+      FROM provider_profiles
+
+      JOIN users
+      ON users.id =
+      provider_profiles.user_id
+
+      WHERE provider_profiles.approval_status
+      IN ('approved','rejected')
+
+      ORDER BY users.id DESC
+      `
+    );
+
+    res.status(200).json({
+
+      success: true,
+
+      data: result,
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Server Error",
     });
   }
 };
