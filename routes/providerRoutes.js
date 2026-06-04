@@ -2,19 +2,18 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    getPendingProviders,
-    approveProvider,
-    rejectProvider,
-} = require("../controllers/providerController");
-//show list of provider that rejected and approved
-const {
-  getAcceptanceList
+  getDashboard,
+  acceptJob,
+  rejectJob,
+  getCommission,
 } = require("../controllers/providerController");
 
-// routes
-router.get("/pending", getPendingProviders);
-router.put("/approve/:id", approveProvider);
-router.put("/reject/:id", rejectProvider);
-router.get("/acceptance-list",getAcceptanceList);
+router.get("/dashboard", getDashboard);
+
+router.post("/jobs/:jobId/accept", acceptJob);
+
+router.post("/jobs/:jobId/reject", rejectJob);
+
+router.get("/commission", getCommission);
 
 module.exports = router;

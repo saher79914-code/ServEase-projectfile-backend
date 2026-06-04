@@ -1,196 +1,85 @@
-const db = require("../config/db");
-
-// GET PENDING PROVIDERS
-exports.getPendingProviders = async (req, res) => {
-    try {
-
-        const sql = `
-            SELECT 
-                u.id,
-                u.full_name,
-                u.email,
-                u.phone,
-                p.cnic_image,
-                p.bio,
-                p.years_of_experience,
-                p.approval_status
-            FROM users u
-            JOIN provider_profiles p 
-            ON u.id = p.user_id
-            WHERE p.approval_status = 'pending'
-        `;
-
-        const [result] = await db.query(sql);
-
-        res.status(200).json({
-            success: true,
-            data: result
-        });
-
-    } catch (error) {
-
-        console.error("Pending Providers Error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
-};
-
-// APPROVE PROVIDER
-exports.approveProvider = async (req, res) => {
-
+const getDashboard = async (req, res) => {
   try {
-
-    const id = req.params.id;
-
-    await db.query(
-      `
-      UPDATE provider_profiles
-      SET approval_status = 'approved'
-      WHERE user_id = ?
-      `,
-      [id]
-    );
-
     res.status(200).json({
-      success: true,
-      message: "Provider Approved"
-    });
+      providerName: "Ali Raza",
+      providerInitials: "AR",
+      isCnicVerified: true,
 
+      totalJobs: 15,
+      pendingJobs: 3,
+      doneJobs: 12,
+      earned: 25000,
+
+      commissionModel: {
+        freeJobsCount: 5,
+        commissionRate: 10,
+      },
+
+      incomingRequests: [
+        {
+          jobId: "101",
+          customerName: "Ahmed",
+          scheduledDate: "2026-06-03",
+          scheduledTime: "10:00 AM",
+          location: "Lahore",
+          amount: 1500,
+          status: "Pending",
+        },
+      ],
+    });
   } catch (error) {
-
-    console.log(error);
-
     res.status(500).json({
-      success: false,
-      message: "Server Error"
-    });
-  }
-};
-// REJECT PROVIDER
-exports.rejectProvider = async (req, res) => {
-
-  try {
-
-    const id = req.params.id;
-
-    await db.query(
-      `
-      UPDATE provider_profiles
-      SET approval_status = 'rejected'
-      WHERE user_id = ?
-      `,
-      [id]
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "Provider Rejected"
-    });
-
-  } catch (error) {
-
-    console.log(error);
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error"
+      message: error.message,
     });
   }
 };
 
-exports.getAcceptanceCounts =
-async (req, res) => {
-
+const acceptJob = async (req, res) => {
   try {
-
-    const [approved] =
-    await db.query(
-      `
-      SELECT COUNT(*) AS total
-      FROM provider_profiles
-      WHERE approval_status = 'approved'
-      `
-    );
-
-    const [rejected] =
-    await db.query(
-      `
-      SELECT COUNT(*) AS total
-      FROM provider_profiles
-      WHERE approval_status = 'rejected'
-      `
-    );
+    const { jobId } = req.params;
 
     res.status(200).json({
-
       success: true,
-
-      approved:
-      approved[0].total,
-
-      rejected:
-      rejected[0].total,
+      message: `Job ${jobId} accepted`,
     });
-
   } catch (error) {
-
-    console.log(error);
-
     res.status(500).json({
-
-      success: false,
-
-      message: "Server Error",
+      message: error.message,
     });
   }
 };
-exports.getAcceptanceList =
-async (req, res) => {
 
+const rejectJob = async (req, res) => {
   try {
-
-    const [result] =
-    await db.query(
-      `
-      SELECT
-      users.id,
-      users.full_name,
-      users.email,
-      provider_profiles.cnic_image,
-      provider_profiles.approval_status
-
-      FROM provider_profiles
-
-      JOIN users
-      ON users.id =
-      provider_profiles.user_id
-
-      WHERE provider_profiles.approval_status
-      IN ('approved','rejected')
-
-      ORDER BY users.id DESC
-      `
-    );
+    const { jobId } = req.params;
 
     res.status(200).json({
-
       success: true,
-
-      data: result,
+      message: `Job ${jobId} rejected`,
     });
-
   } catch (error) {
-
-    console.log(error);
-
     res.status(500).json({
-
-      success: false,
-
-      message: "Server Error",
+      message: error.message,
     });
   }
+};
+
+const getCommission = async (req, res) => {
+  try {
+    res.status(200).json({
+      freeJobsCount: 5,
+      commissionRate: 10,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+module.exports = {
+  getDashboard,
+  acceptJob,
+  rejectJob,
+  getCommission,
 };
