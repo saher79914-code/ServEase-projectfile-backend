@@ -1,181 +1,297 @@
 const db = require("../config/db");
 
 // GET ALL SERVICES
-exports.getAllServices = async (req, res) => {
-    try {
+exports.getServices = async (req, res) => {
+  try {
+    const [services] = await db.query(`
+      SELECT
+        s.*,
+        COUNT(DISTINCT pp.user_id) AS provider_count,
+        COUNT(DISTINCT b.customer_id) AS customer_count
+      FROM services s
+      LEFT JOIN provider_profiles pp ON s.id = pp.service_id
+      LEFT JOIN bookings b ON s.id = b.service_id
+      GROUP BY s.id
+      ORDER BY s.id DESC
+    `);
 
-        const [services] = await db.query(
-            "SELECT * FROM services ORDER BY id DESC"
-        );
-
-        res.status(200).json({
-            success: true,
-            data: services
-        });
-
-    } catch (error) {
-
-        console.error("GET SERVICES ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
+    res.status(200).json({
+      success: true,
+      data: services
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
 };
 
-// ADD SERVICE
-exports.addService = async (req, res) => {
-    try {
+// GET SINGLE SERVICE
+exports.getServiceById = async (req, res) => {
+  try {
+    const id = req.params.id;
 
-        const {
-            name,
-            description,
-            price,
-            category,
-            icon
-        } = req.body;
+    // Service info
+    const [[service]] = await db.query(
+      `SELECT * FROM services WHERE id = ?`, [id]
+    );
+    if (!service) return res.status(404).json({ success: false, message: "Service Not Found" });
 
-        const sql = `
-            INSERT INTO services
-            (name, description, price, category, icon)
-            VALUES (?, ?, ?, ?, ?)
-        `;
+    // Stats
+    const [[{ provider_count }]] = await db.query(
+      `SELECT COUNT(*) AS provider_count FROM provider_profiles WHERE service_id = ?`, [id]
+    );
+    const [[{ customer_count }]] = await db.query(
+      `SELECT COUNT(DISTINCT customer_id) AS customer_count FROM bookings WHERE service_id = ?`, [id]
+    );
+    const [[{ total_bookings }]] = await db.query(
+      `SELECT COUNT(*) AS total_bookings FROM bookings WHERE service_id = ?`, [id]
+    );
+    const [[{ avg_rating }]] = await db.query(
+      `SELECT COALESCE(AVG(p.rating), 0) AS avg_rating FROM provider_profiles p WHERE p.service_id = ?`, [id]
+    );
 
-        await db.query(sql, [
-            name,
-            description,
-            price,
-            category,
-            icon
-        ]);
+    // Providers list
+    const [providers] = await db.query(
+      `SELECT 
+         u.id, u.full_name AS name, u.phone,
+         p.rating, p.created_at AS joined_date,
+         COUNT(b.id) AS jobs_done,
+         CASE WHEN SUM(CASE WHEN b.status = 'accepted' THEN 1 ELSE 0 END) > 0 
+              THEN 0 ELSE 1 END AS is_available
+       FROM provider_profiles p
+       JOIN users u ON u.id = p.user_id
+       LEFT JOIN bookings b ON b.provider_id = u.id
+       WHERE p.service_id = ?
+       GROUP BY u.id, u.full_name, u.phone, p.rating, p.created_at`,
+      [id]
+    );
 
-        res.status(201).json({
-            success: true,
-            message: "Service added successfully"
-        });
+    // Customers list
+    const [customers] = await db.query(
+      `SELECT 
+         u.id, u.full_name AS name, u.phone,
+         COUNT(b.id) AS total_bookings,
+         MAX(b.created_at) AS last_booking
+       FROM bookings b
+       JOIN users u ON u.id = b.customer_id
+       WHERE b.service_id = ?
+       GROUP BY u.id, u.full_name, u.phone`,
+      [id]
+    );
 
-    } catch (error) {
+    res.status(200).json({
+      service_id:     service.id,
+      service_name:   service.name,
+      service_icon:   service.icon ?? '🔧',
+      category:       service.category,
+      price:          service.price,
+      is_active:      service.is_active,
+      provider_count,
+      customer_count,
+      total_bookings,
+      avg_rating,
+      providers: providers.map(p => ({
+        id:           p.id,
+        name:         p.name,
+        phone:        p.phone,
+        rating:       parseFloat(p.rating),
+        jobs_done:    p.jobs_done,
+        is_available: p.is_available,
+        joined_date:  new Date(p.joined_date).toLocaleDateString('en-PK', { month: 'short', year: 'numeric' }),
+      })),
+      customers: customers.map(c => ({
+        id:             c.id,
+        name:           c.name,
+        phone:          c.phone,
+        total_bookings: c.total_bookings,
+        last_booking:   new Date(c.last_booking).toLocaleDateString('en-PK', { month: 'short', day: 'numeric', year: 'numeric' }),
+      })),
+    });
 
-        console.error("ADD SERVICE ERROR:", error);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+// CREATE SERVICE
+exports.createService = async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      price,
+      category,
+      icon,
+      is_active,
+    } = req.body;
 
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
+    const [result] = await db.query(
+      `
+      INSERT INTO services
+      (
+        name,
+        description,
+        price,
+        category,
+        icon,
+        is_active
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      [
+        name,
+        description,
+        price,
+        category,
+        icon,
+        is_active,
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Service Created",
+      id: result.insertId,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
 };
 
 // UPDATE SERVICE
 exports.updateService = async (req, res) => {
-    try {
+  try {
+    const id = req.params.id;
 
-        const serviceId = req.params.id;
+    const {
+      name,
+      description,
+      price,
+      category,
+      icon,
+      is_active,
+    } = req.body;
 
-        const {
-            name,
-            description,
-            price,
-            category,
-            icon
-        } = req.body;
+    await db.query(
+      `
+      UPDATE services
+      SET
+      name = ?,
+      description = ?,
+      price = ?,
+      category = ?,
+      icon = ?,
+      is_active = ?
+      WHERE id = ?
+      `,
+      [
+        name,
+        description,
+        price,
+        category,
+        icon,
+        is_active,
+        id,
+      ]
+    );
 
-        const sql = `
-            UPDATE services
-            SET
-                name = ?,
-                description = ?,
-                price = ?,
-                category = ?,
-                icon = ?
-            WHERE id = ?
-        `;
+    res.status(200).json({
+      success: true,
+      message: "Service Updated",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
 
-        await db.query(sql, [
-            name,
-            description,
-            price,
-            category,
-            icon,
-            serviceId
-        ]);
+// TOGGLE ACTIVE
+exports.toggleService = async (req, res) => {
+  try {
+    const id = req.params.id;
 
-        res.status(200).json({
-            success: true,
-            message: "Service updated"
-        });
+    const { is_active } = req.body;
 
-    } catch (error) {
+    await db.query(
+      `
+      UPDATE services
+      SET is_active = ?
+      WHERE id = ?
+      `,
+      [is_active, id]
+    );
 
-        console.error("UPDATE SERVICE ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
+    res.status(200).json({
+      success: true,
+      message: "Status Updated",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
 };
 
 // DELETE SERVICE
+// DELETE SERVICE
 exports.deleteService = async (req, res) => {
-    try {
+  try {
 
-        const serviceId = req.params.id;
+    const id = req.params.id;
 
-        await db.query(
-            "DELETE FROM services WHERE id = ?",
-            [serviceId]
-        );
+    // Check provider_profiles
+    const [providers] = await db.query(
+      `
+      SELECT user_id
+      FROM provider_profiles
+      WHERE service_id = ?
+      `,
+      [id]
+    );
 
-        res.status(200).json({
-            success: true,
-            message: "Service deleted"
-        });
-
-    } catch (error) {
-
-        console.error("DELETE SERVICE ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
+    if (providers.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "This service is assigned to providers and cannot be deleted"
+      });
     }
-};
 
-// TOGGLE SERVICE STATUS
-exports.toggleServiceStatus = async (req, res) => {
-    try {
+    const [result] = await db.query(
+      `
+      DELETE FROM services
+      WHERE id = ?
+      `,
+      [id]
+    );
 
-        const serviceId = req.params.id;
-
-        const [service] = await db.query(
-            "SELECT is_active FROM services WHERE id = ?",
-            [serviceId]
-        );
-
-        const currentStatus = service[0].is_active;
-
-        const newStatus = currentStatus === 1 ? 0 : 1;
-
-        await db.query(
-            "UPDATE services SET is_active = ? WHERE id = ?",
-            [newStatus, serviceId]
-        );
-
-        res.status(200).json({
-            success: true,
-            message: "Service status updated",
-            is_active: newStatus
-        });
-
-    } catch (error) {
-
-        console.error("TOGGLE SERVICE ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Service Not Found"
+      });
     }
+
+    res.status(200).json({
+      success: true,
+      message: "Service Deleted"
+    });
+
+  } catch (error) {
+
+    console.log(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
 };

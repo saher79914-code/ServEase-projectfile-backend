@@ -11,6 +11,8 @@ exports.getAllUsers = async (req, res) => {
       full_name,
       email,
       phone,
+      cnic,
+      address,
       role,
       is_blocked,
       created_at

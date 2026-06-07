@@ -69,6 +69,7 @@ const registerCustomer = async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════
 const registerProvider = async (req, res) => {
   try {
+
     const {
       full_name,
       email,
@@ -76,70 +77,70 @@ const registerProvider = async (req, res) => {
       cnic,
       address,
       password,
-      service_id,
+      category,
+      service_name,
       years_of_experience,
       bio,
     } = req.body;
 
     console.log("registerProvider called with:", req.body);
 
-    // ── Validation ─────────────────────────────────────────────────
-    if (!full_name || !email || !phone || !cnic || !address || !password)
-      return res.status(400).json({ success: false, message: "All fields are required" });
-
-    if (!/^[\w\-.]+@([\w\-]+\.)+[\w]{2,4}$/.test(email))
-      return res.status(400).json({ success: false, message: "Enter a valid email" });
-
-    if (!/^\d{5}-\d{7}-\d{1}$/.test(cnic))
-      return res.status(400).json({ success: false, message: "CNIC format: XXXXX-XXXXXXX-X" });
-
-    if (password.length < 6)
-      return res.status(400).json({ success: false, message: "Password min 6 characters" });
-
-    // ── Check duplicate email / CNIC ───────────────────────────────
-    const [existing] = await db.query(
-      `SELECT id FROM users WHERE email = ? OR cnic = ? LIMIT 1`,
-      [email, cnic]
+    // Find service id from services table
+    const [serviceRows] = await db.query(
+      `SELECT id FROM services WHERE name = ? LIMIT 1`,
+      [service_name]
     );
-    if (existing.length > 0)
-      return res.status(409).json({ success: false, message: "Email or CNIC already registered" });
 
-    // ── Hash password ──────────────────────────────────────────────
+    if (serviceRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected service not found"
+      });
+    }
+
+    const service_id = serviceRows[0].id;
+
     const hashed = await bcrypt.hash(password, 12);
 
-    // ── Insert into users ──────────────────────────────────────────
     const [userResult] = await db.query(
       `INSERT INTO users
-        (full_name, email, phone, cnic, address, password, role)
-       VALUES (?, ?, ?, ?, ?, ?, 'provider')`,
-      [full_name, email, phone, cnic, address, hashed]
+      (full_name,email,phone,cnic,address,password,role)
+      VALUES (?,?,?,?,?,?,'provider')`,
+      [full_name,email,phone,cnic,address,hashed]
     );
 
     const userId = userResult.insertId;
 
-    // ── Insert into provider_profiles ─────────────────────────────
     await db.query(
       `INSERT INTO provider_profiles
-        (user_id, service_id, years_of_experience, bio)
-       VALUES (?, ?, ?, ?)`,
-      [userId, service_id ?? null, years_of_experience ?? 0, bio ?? null]
+      (
+        user_id,
+        service_id,
+        years_of_experience,
+        bio
+      )
+      VALUES (?,?,?,?)`,
+      [
+        userId,
+        service_id,
+        years_of_experience ?? 0,
+        bio ?? null
+      ]
     );
 
     return res.status(201).json({
       success: true,
-      message: "Provider registered successfully. Awaiting admin approval.",
-      data: {
-        id: userId,
-        full_name,
-        email,
-        role: "provider",
-        approval_status: "pending",
-      },
+      message: "Provider registered successfully"
     });
 
   } catch (err) {
-    console.error("registerProvider error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };
 

@@ -2,23 +2,24 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    getAllServices,
-    addService,
-    updateService,
-    deleteService,
-    toggleServiceStatus
+  getServices,
+  getServiceById,
+  createService,
+  updateService,
+  toggleService,
+  deleteService,
 } = require("../controllers/serviceController");
 
-// routes
+router.get("/", getServices);
 
-router.get("/", getAllServices);
+router.get("/:id", getServiceById);
 
-router.post("/", addService);
+router.post("/", createService);
 
 router.put("/:id", updateService);
 
-router.delete("/:id", deleteService);
+router.patch("/:id/toggle", toggleService);
 
-router.put("/toggle/:id", toggleServiceStatus);
+router.delete("/:id", deleteService);
 
 module.exports = router;

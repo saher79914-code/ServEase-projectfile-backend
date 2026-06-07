@@ -39,6 +39,9 @@ app.use("/api/provider", require("./routes/providerRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 
 app.use("/uploads", express.static("uploads"));
+app.use("/api/services", require("./routes/serviceRoutes"));
+app.use("/api/providerside", require("./routes/provider/dashboardRoutes"));
+
 
 // Server
 app.listen(PORT, () => {
