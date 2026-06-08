@@ -11,5 +11,12 @@ router.put ("/jobs/:id/accept",       ctrl.acceptJob);
 router.put ("/jobs/:id/decline",      ctrl.declineJob);
 router.put ("/jobs/:id/status",       ctrl.updateJobStatus);
 router.post("/commission/submit",     upload.single("screenshot"), ctrl.submitCommission);
+router.get("/earnings", ctrl.getEarnings);
 
-module.exports = router; 
+module.exports = router;
+// Profile routes
+const profileCtrl = require("../../controllers/provider/providerProfileController");
+router.get ("/profile",              profileCtrl.getProfile);
+router.put ("/profile",              profileCtrl.updateProfile);
+router.get ("/notifications",        profileCtrl.getNotifications);
+ 

@@ -41,6 +41,8 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/uploads", express.static("uploads"));
 app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/providerside", require("./routes/provider/dashboardRoutes"));
+app.use("/api/admin/commissions", require("./routes/adminCommissionRoutes"));
+app.use("/api/admin/bookings", require("./routes/adminBookingsRoutes"));
 
 
 // Server

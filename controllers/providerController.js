@@ -1,5 +1,33 @@
 const db = require("../config/db");
 
+exports.getProfile = async (req, res) => {
+  const pid = parseInt(req.query.provider_id);
+  try {
+    const [[data]] = await db.query(
+      `SELECT u.full_name, u.phone, u.email, u.address, u.profile_image,
+              p.bio, p.years_of_experience, p.approval_status, p.rating,
+              COALESCE(s.name, 'N/A') AS service_name, 
+              COALESCE(s.price, 0)   AS hourly_rate,
+              (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
+       FROM provider_profiles p
+       JOIN users u       ON u.id = p.user_id
+       LEFT JOIN services s ON s.id = p.service_id
+       WHERE p.user_id = ?`, [pid]);
+
+    if (!data) {
+      // provider_profiles record nahi hai — users se basic data return karo
+      const [[user]] = await db.query(
+        `SELECT full_name, phone, email, address FROM users WHERE id = ?`, [pid]);
+      if (!user) return res.status(404).json({ message: "Provider not found" });
+      return res.json({
+        ...user,
+        bio: '', years_of_experience: 0, approval_status: 'pending',
+        rating: 0, service_name: 'N/A', hourly_rate: 0, jobs_done: 0,
+      });
+    }
+    res.json(data);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
 // GET PENDING PROVIDERS
 exports.getPendingProviders = async (req, res) => {
     try {

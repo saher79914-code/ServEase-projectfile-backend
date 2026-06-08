@@ -108,3 +108,122 @@ exports.submitCommission = async (req, res) => {
     res.json({ message: "Commission submitted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
+// GET EARNINGS
+// exports.getEarnings = async (req, res) => {
+//   const { provider_id } = req.query;
+//   console.log("EARNINGS HIT - provider_id:", provider_id); // ← add karo
+//   try {
+//     // 1. Total earned
+//     const [[{ total_earned }]] = await db.query(
+//       `SELECT COALESCE(SUM(py.amount), 0) AS total_earned
+//        FROM payment py
+//        JOIN bookings b ON b.id = py.booking_id
+//        WHERE b.provider_id = ? AND py.status = 'paid'`,
+//       [provider_id]
+//     );
+//     console.log("TOTAL EARNED:", total_earned); // ← add karo
+
+//     // 2. Commission due
+//     const [[{ pending_commission }]] = await db.query(
+//       `SELECT COALESCE(pending_commission, 0) AS pending_commission
+//        FROM provider_profiles WHERE user_id = ?`,
+//       [provider_id]
+//     );
+
+//     // 3. Monthly earnings - last 4 months (MIN fix kiya GROUP BY error ke liye)
+//     const [monthly] = await db.query(
+//       `SELECT DATE_FORMAT(MIN(py.created_at), '%b') AS month,
+//               COALESCE(SUM(py.amount), 0)           AS amount
+//        FROM payment py
+//        JOIN bookings b ON b.id = py.booking_id
+//        WHERE b.provider_id = ?
+//          AND py.status = 'paid'
+//          AND py.created_at >= DATE_SUB(NOW(), INTERVAL 4 MONTH)
+//        GROUP BY DATE_FORMAT(py.created_at, '%Y-%m')
+//        ORDER BY DATE_FORMAT(py.created_at, '%Y-%m') ASC`,
+//       [provider_id]
+//     );
+
+//     // 4. Transaction history - last 10
+//     const [rows] = await db.query(
+//       `SELECT b.id, b.total_price AS price, MAX(py.created_at) AS created_at,
+//               s.name AS service_name, u.full_name AS customer_name,
+//               MAX(cp.amount) AS commission_amount,
+//               (SELECT COUNT(*) FROM bookings b2
+//                WHERE b2.provider_id = b.provider_id
+//                  AND b2.status = 'completed'
+//                  AND b2.id <= b.id) AS job_number
+//        FROM bookings b
+//        JOIN users u    ON u.id = b.customer_id
+//        JOIN services s ON s.id = b.service_id
+//        JOIN payment py ON py.booking_id = b.id AND py.status = 'paid'
+//        LEFT JOIN commission_payments cp ON cp.provider_id = b.provider_id
+//        WHERE b.provider_id = ? AND b.status = 'completed'
+//        GROUP BY b.id, b.total_price, s.name, u.full_name
+//        ORDER BY created_at DESC LIMIT 10`,
+//       [provider_id]
+//     );
+
+//     const transactions = rows.map((r) => {
+//       const isFree  = r.job_number <= 2;
+//       const dateStr = new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+//       const subtitle = isFree
+//         ? `${dateStr} · Free (job #${r.job_number})`
+//         : r.commission_amount
+//         ? `${dateStr} · Commission: RS ${r.commission_amount} paid`
+//         : dateStr;
+//       return { title: `${r.service_name} — ${r.customer_name}`, subtitle, amount: parseFloat(r.price), is_free: isFree };
+//     });
+
+//     res.json({
+//       total_earned:   parseFloat(total_earned),
+//       commission_due: parseFloat(pending_commission),
+//       monthly,
+//       transactions,
+//     });
+//   } catch (err) { res.status(500).json({ message: err.message }); }
+// };
+exports.getEarnings = async (req, res) => {
+  const { provider_id } = req.query;
+  const pid = parseInt(provider_id); // ← add
+  try {
+    const [[{ total_earned }]] = await db.query(
+      `SELECT COALESCE(SUM(total_price), 0) AS total_earned 
+       FROM bookings WHERE provider_id = ? AND status = 'completed'`, [pid]);
+
+    const [[provider]] = await db.query(
+      `SELECT pending_commission FROM provider_profiles WHERE user_id = ?`, [pid]);
+
+    const [monthly] = await db.query(
+  `SELECT DATE_FORMAT(created_at, '%b') AS month,
+          COALESCE(SUM(total_price), 0) AS amount
+   FROM bookings
+   WHERE provider_id = ? AND status = 'completed'
+     AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+   GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b')
+   ORDER BY DATE_FORMAT(created_at, '%Y-%m')`, [pid]);
+
+    const [transactions] = await db.query(
+      `SELECT s.name AS service, u.full_name AS customer,
+              DATE_FORMAT(b.created_at, '%b %d') AS date,
+              b.total_price AS amount,
+              ROW_NUMBER() OVER (PARTITION BY b.provider_id ORDER BY b.created_at) AS job_number
+       FROM bookings b
+       JOIN users u ON u.id = b.customer_id
+       JOIN services s ON s.id = b.service_id
+       WHERE b.provider_id = ? AND b.status = 'completed'
+       ORDER BY b.created_at DESC`, [pid]);
+
+    res.json({
+      total_earned,
+      commission_due: provider?.pending_commission ?? 0,
+      monthly: monthly.map(m => ({ month: m.month, amount: parseFloat(m.amount) })),
+      transactions: transactions.map((t) => ({
+        title: `${t.service} — ${t.customer}`,
+        subtitle: t.date,
+        amount: parseFloat(t.amount),
+        is_free: t.job_number <= 2,
+      })),
+    });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
