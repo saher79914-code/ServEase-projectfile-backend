@@ -43,6 +43,8 @@ app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/providerside", require("./routes/provider/dashboardRoutes"));
 app.use("/api/admin/commissions", require("./routes/adminCommissionRoutes"));
 app.use("/api/admin/bookings", require("./routes/adminBookingsRoutes"));
+app.use("/api/customer", require("./routes/customer/customerRoutes"));
+
 
 
 // Server
