@@ -76,3 +76,73 @@ exports.getProviders = async (req, res) => {
     })));
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
+
+// GET provider detail
+exports.getProviderDetail = async (req, res) => {
+  const providerId = parseInt(req.params.id);
+  try {
+    const [[provider]] = await db.query(
+      `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+              p.rating, s.price AS rate, p.approval_status,
+              u.address AS location, p.bio,
+              (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
+       FROM provider_profiles p
+       JOIN users u ON u.id = p.user_id
+       JOIN services s ON s.id = p.service_id
+       WHERE u.id = ?`, [providerId]);
+
+    if (!provider) return res.status(404).json({ message: "Provider not found" });
+
+    // All services by this provider's category
+    const [services] = await db.query(
+      `SELECT name FROM services WHERE category = ? AND is_active = 1`, [provider.category]);
+
+    res.json({
+      id:               provider.id,
+      name:             provider.name,
+      service:          provider.service,
+      category:         provider.category,
+      rating:           parseFloat(provider.rating),
+      rate:             provider.rate,
+      jobs_done:        provider.jobs_done,
+      location:         provider.location ?? '',
+      bio:              provider.bio ?? '',
+      is_verified:      provider.approval_status === 'approved' ? 1 : 0,
+      services_offered: services.map(s => s.name),
+      reviews:          [], // reviews table baad mein add hogi
+    });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// POST create booking
+exports.createBooking = async (req, res) => {
+  const { customer_id, provider_id, service_id, scheduled_date, scheduled_time, location, total_price } = req.body;
+  try {
+    // Get service_id from provider
+    const [[profile]] = await db.query(
+      `SELECT service_id FROM provider_profiles WHERE user_id = ?`, [provider_id]);
+
+    const [result] = await db.query(
+      `INSERT INTO bookings (customer_id, provider_id, service_id, scheduled_date, scheduled_time, location, total_price, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [customer_id, provider_id, profile?.service_id ?? service_id, scheduled_date, scheduled_time, location, total_price]);
+
+    res.json({ message: "Booking created", booking_id: result.insertId });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// GET customer bookings
+exports.getMyBookings = async (req, res) => {
+  const customerId = parseInt(req.query.customer_id);
+  try {
+    const [rows] = await db.query(
+      `SELECT b.id, u.full_name AS provider_name, s.name AS service_name,
+              b.scheduled_date, b.scheduled_time, b.status, b.total_price
+       FROM bookings b
+       JOIN users u ON u.id = b.provider_id
+       JOIN services s ON s.id = b.service_id
+       WHERE b.customer_id = ?
+       ORDER BY b.created_at DESC`, [customerId]);
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};

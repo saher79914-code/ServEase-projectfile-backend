@@ -5,3 +5,7 @@ router.get("/home",      ctrl.getHomeData);
 router.get("/providers", ctrl.getProviders);
 
 module.exports = router;
+
+router.get("/provider/:id", ctrl.getProviderDetail);
+router.post("/bookings",    ctrl.createBooking);
+router.get("/bookings",     ctrl.getMyBookings);
