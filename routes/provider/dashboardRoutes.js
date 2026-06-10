@@ -18,5 +18,5 @@ module.exports = router;
 const profileCtrl = require("../../controllers/provider/providerProfileController");
 router.get ("/profile",              profileCtrl.getProfile);
 router.put ("/profile",              profileCtrl.updateProfile);
-router.get ("/notifications",        profileCtrl.getNotifications);
+router.get ("/notifications",        ctrl.getNotifications);
  

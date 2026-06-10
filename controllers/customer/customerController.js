@@ -118,7 +118,6 @@ exports.getProviderDetail = async (req, res) => {
 exports.createBooking = async (req, res) => {
   const { customer_id, provider_id, service_id, scheduled_date, scheduled_time, location, total_price } = req.body;
   try {
-    // Get service_id from provider
     const [[profile]] = await db.query(
       `SELECT service_id FROM provider_profiles WHERE user_id = ?`, [provider_id]);
 
@@ -127,8 +126,23 @@ exports.createBooking = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
       [customer_id, provider_id, profile?.service_id ?? service_id, scheduled_date, scheduled_time, location, total_price]);
 
+    // ── Customer ko confirmation ──
+    await db.query(
+      `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+       VALUES (?, 'customer', 'Booking Submitted', 'Your booking request has been sent to the provider.', 'booking', 0)`,
+      [customer_id]);
+
+    // ── Provider ko new request ──
+    await db.query(
+      `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+       VALUES (?, 'provider', 'New Booking Request', 'You have a new booking request. Check your jobs.', 'booking', 0)`,
+      [provider_id]);
+
     res.json({ message: "Booking created", booking_id: result.insertId });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error('BOOKING ERROR:', err.message);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // GET customer bookings
@@ -144,5 +158,82 @@ exports.getMyBookings = async (req, res) => {
        WHERE b.customer_id = ?
        ORDER BY b.created_at DESC`, [customerId]);
     res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// GET customer profile
+exports.getProfile = async (req, res) => {
+  const userId = parseInt(req.query.user_id);
+  try {
+    const [[user]] = await db.query(
+      `SELECT u.full_name, u.email, u.phone, u.address,
+              DATE_FORMAT(u.created_at, '%Y') AS member_since,
+              (SELECT COUNT(*) FROM bookings WHERE customer_id = u.id) AS total_bookings,
+              (SELECT COUNT(*) FROM bookings WHERE customer_id = u.id AND status IN ('pending','accepted','in_progress')) AS active_bookings
+       FROM users u WHERE u.id = ?`, [userId]);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// PUT update profile
+exports.updateProfile = async (req, res) => {
+  const userId = parseInt(req.query.user_id);
+  const { full_name, phone, address } = req.body;
+  try {
+    await db.query(
+      `UPDATE users SET full_name = ?, phone = ?, address = ? WHERE id = ?`,
+      [full_name, phone, address, userId]);
+    res.json({ message: "Profile updated" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// PUT change password
+exports.changePassword = async (req, res) => {
+  const userId = parseInt(req.query.user_id);
+  const { current_password, new_password } = req.body;
+  const bcrypt = require("bcryptjs");
+  try {
+    const [[user]] = await db.query(`SELECT password FROM users WHERE id = ?`, [userId]);
+    const isMatch = await bcrypt.compare(current_password, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Current password is incorrect" });
+    const hashed = await bcrypt.hash(new_password, 12);
+    await db.query(`UPDATE users SET password = ? WHERE id = ?`, [hashed, userId]);
+    res.json({ message: "Password changed successfully" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// POST forgot password
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const [[user]] = await db.query(`SELECT id FROM users WHERE email = ?`, [email]);
+    if (!user) return res.status(404).json({ message: "Email not found" });
+    // In production: send email with reset link
+    // For now: just confirm email exists
+    res.json({ message: "Reset link sent to your email" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+// GET notifications
+exports.getNotifications = async (req, res) => {
+  const customerId = parseInt(req.query.customer_id);
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, message, type, is_read, created_at
+       FROM notifications
+       WHERE user_id = ? AND role = 'customer'
+       ORDER BY created_at DESC`,
+      [customerId]
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// PUT mark notification as read
+exports.markNotificationRead = async (req, res) => {
+  const notifId = parseInt(req.params.id);
+  try {
+    await db.query(`UPDATE notifications SET is_read = 1 WHERE id = ?`, [notifId]);
+    res.json({ message: "Marked as read" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

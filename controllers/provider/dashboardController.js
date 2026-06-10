@@ -51,7 +51,7 @@ exports.getNewJobs = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// ALL JOBS (my jobs page)
+// ALL JOBS
 exports.getAllJobs = async (req, res) => {
   const { provider_id } = req.query;
   try {
@@ -71,7 +71,21 @@ exports.getAllJobs = async (req, res) => {
 // ACCEPT JOB
 exports.acceptJob = async (req, res) => {
   try {
-    await db.query(`UPDATE bookings SET status = 'accepted' WHERE id = ?`, [req.params.id]);
+    await db.query(
+      `UPDATE bookings SET status = 'accepted' WHERE id = ?`, [req.params.id]);
+
+    const [[booking]] = await db.query(
+      `SELECT customer_id FROM bookings WHERE id = ?`, [req.params.id]);
+
+    if (booking) {
+      try {
+        await db.query(
+          `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+           VALUES (?, 'customer', 'Booking Accepted!', 'Your booking has been accepted by the provider.', 'booking', 0)`,
+          [booking.customer_id]);
+      } catch (e) { console.error('Notif error:', e.message); }
+    }
+
     res.json({ message: "Job accepted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
@@ -79,18 +93,58 @@ exports.acceptJob = async (req, res) => {
 // DECLINE JOB
 exports.declineJob = async (req, res) => {
   try {
-    await db.query(`UPDATE bookings SET status = 'declined' WHERE id = ?`, [req.params.id]);
+    await db.query(
+      `UPDATE bookings SET status = 'declined' WHERE id = ?`, [req.params.id]);
+
+    const [[booking]] = await db.query(
+      `SELECT customer_id FROM bookings WHERE id = ?`, [req.params.id]);
+
+    if (booking) {
+      try {
+        await db.query(
+          `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+           VALUES (?, 'customer', 'Booking Declined', 'Unfortunately your booking was declined by the provider.', 'booking', 0)`,
+          [booking.customer_id]);
+      } catch (e) { console.error('Notif error:', e.message); }
+    }
+
     res.json({ message: "Job declined" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// UPDATE JOB STATUS (confirmed/on_the_way/in_progress/completed)
+// UPDATE JOB STATUS
 exports.updateJobStatus = async (req, res) => {
   const { status } = req.body;
+  const bookingId = parseInt(req.params.id);
   try {
-    await db.query(`UPDATE bookings SET status = ? WHERE id = ?`, [status, req.params.id]);
+    await db.query(
+      `UPDATE bookings SET status = ? WHERE id = ?`, [status, bookingId]);
+
+    const [[booking]] = await db.query(
+      `SELECT customer_id FROM bookings WHERE id = ?`, [bookingId]);
+
+    const messages = {
+      accepted:    { title: 'Booking Confirmed',   msg: 'Your booking has been confirmed.' },
+      on_the_way:  { title: 'Provider On The Way', msg: 'Your provider is on the way to your location.' },
+      in_progress: { title: 'Work Started',        msg: 'Your service is now in progress.' },
+      completed:   { title: 'Job Completed',       msg: 'Your booking has been marked as completed.' },
+    };
+
+    const notif = messages[status];
+    if (notif && booking) {
+      try {
+        await db.query(
+          `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+           VALUES (?, 'customer', ?, ?, 'booking', 0)`,
+          [booking.customer_id, notif.title, notif.msg]);
+      } catch (e) { console.error('Notif error:', e.message); }
+    }
+
     res.json({ message: "Status updated" });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error('UPDATE STATUS ERROR:', err.message);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // SUBMIT COMMISSION
@@ -101,91 +155,17 @@ exports.submitCommission = async (req, res) => {
     await db.query(
       `INSERT INTO commission_payments (provider_id, amount, payment_method, screenshot, status, created_at)
        VALUES (?, ?, ?, ?, 'pending', NOW())`,
-      [provider_id, amount, payment_method, screenshot]
-    );
+      [provider_id, amount, payment_method, screenshot]);
     await db.query(
       `UPDATE provider_profiles SET pending_commission = 0 WHERE user_id = ?`, [provider_id]);
     res.json({ message: "Commission submitted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
+
 // GET EARNINGS
-// exports.getEarnings = async (req, res) => {
-//   const { provider_id } = req.query;
-//   console.log("EARNINGS HIT - provider_id:", provider_id); // ← add karo
-//   try {
-//     // 1. Total earned
-//     const [[{ total_earned }]] = await db.query(
-//       `SELECT COALESCE(SUM(py.amount), 0) AS total_earned
-//        FROM payment py
-//        JOIN bookings b ON b.id = py.booking_id
-//        WHERE b.provider_id = ? AND py.status = 'paid'`,
-//       [provider_id]
-//     );
-//     console.log("TOTAL EARNED:", total_earned); // ← add karo
-
-//     // 2. Commission due
-//     const [[{ pending_commission }]] = await db.query(
-//       `SELECT COALESCE(pending_commission, 0) AS pending_commission
-//        FROM provider_profiles WHERE user_id = ?`,
-//       [provider_id]
-//     );
-
-//     // 3. Monthly earnings - last 4 months (MIN fix kiya GROUP BY error ke liye)
-//     const [monthly] = await db.query(
-//       `SELECT DATE_FORMAT(MIN(py.created_at), '%b') AS month,
-//               COALESCE(SUM(py.amount), 0)           AS amount
-//        FROM payment py
-//        JOIN bookings b ON b.id = py.booking_id
-//        WHERE b.provider_id = ?
-//          AND py.status = 'paid'
-//          AND py.created_at >= DATE_SUB(NOW(), INTERVAL 4 MONTH)
-//        GROUP BY DATE_FORMAT(py.created_at, '%Y-%m')
-//        ORDER BY DATE_FORMAT(py.created_at, '%Y-%m') ASC`,
-//       [provider_id]
-//     );
-
-//     // 4. Transaction history - last 10
-//     const [rows] = await db.query(
-//       `SELECT b.id, b.total_price AS price, MAX(py.created_at) AS created_at,
-//               s.name AS service_name, u.full_name AS customer_name,
-//               MAX(cp.amount) AS commission_amount,
-//               (SELECT COUNT(*) FROM bookings b2
-//                WHERE b2.provider_id = b.provider_id
-//                  AND b2.status = 'completed'
-//                  AND b2.id <= b.id) AS job_number
-//        FROM bookings b
-//        JOIN users u    ON u.id = b.customer_id
-//        JOIN services s ON s.id = b.service_id
-//        JOIN payment py ON py.booking_id = b.id AND py.status = 'paid'
-//        LEFT JOIN commission_payments cp ON cp.provider_id = b.provider_id
-//        WHERE b.provider_id = ? AND b.status = 'completed'
-//        GROUP BY b.id, b.total_price, s.name, u.full_name
-//        ORDER BY created_at DESC LIMIT 10`,
-//       [provider_id]
-//     );
-
-//     const transactions = rows.map((r) => {
-//       const isFree  = r.job_number <= 2;
-//       const dateStr = new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-//       const subtitle = isFree
-//         ? `${dateStr} · Free (job #${r.job_number})`
-//         : r.commission_amount
-//         ? `${dateStr} · Commission: RS ${r.commission_amount} paid`
-//         : dateStr;
-//       return { title: `${r.service_name} — ${r.customer_name}`, subtitle, amount: parseFloat(r.price), is_free: isFree };
-//     });
-
-//     res.json({
-//       total_earned:   parseFloat(total_earned),
-//       commission_due: parseFloat(pending_commission),
-//       monthly,
-//       transactions,
-//     });
-//   } catch (err) { res.status(500).json({ message: err.message }); }
-// };
 exports.getEarnings = async (req, res) => {
   const { provider_id } = req.query;
-  const pid = parseInt(provider_id); // ← add
+  const pid = parseInt(provider_id);
   try {
     const [[{ total_earned }]] = await db.query(
       `SELECT COALESCE(SUM(total_price), 0) AS total_earned 
@@ -195,13 +175,13 @@ exports.getEarnings = async (req, res) => {
       `SELECT pending_commission FROM provider_profiles WHERE user_id = ?`, [pid]);
 
     const [monthly] = await db.query(
-  `SELECT DATE_FORMAT(created_at, '%b') AS month,
-          COALESCE(SUM(total_price), 0) AS amount
-   FROM bookings
-   WHERE provider_id = ? AND status = 'completed'
-     AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
-   GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b')
-   ORDER BY DATE_FORMAT(created_at, '%Y-%m')`, [pid]);
+      `SELECT DATE_FORMAT(created_at, '%b') AS month,
+              COALESCE(SUM(total_price), 0) AS amount
+       FROM bookings
+       WHERE provider_id = ? AND status = 'completed'
+         AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+       GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b')
+       ORDER BY DATE_FORMAT(created_at, '%Y-%m')`, [pid]);
 
     const [transactions] = await db.query(
       `SELECT s.name AS service, u.full_name AS customer,
@@ -225,5 +205,21 @@ exports.getEarnings = async (req, res) => {
         is_free: t.job_number <= 2,
       })),
     });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// GET NOTIFICATIONS
+exports.getNotifications = async (req, res) => {
+  const pid = parseInt(req.query.provider_id);
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, message, type, is_read,
+              DATE_FORMAT(created_at, '%b %d') AS date,
+              TIMESTAMPDIFF(MINUTE, created_at, NOW()) AS minutes_ago
+       FROM notifications
+       WHERE user_id = ? AND role = 'provider'
+       ORDER BY created_at DESC
+       LIMIT 20`, [pid]);
+    res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

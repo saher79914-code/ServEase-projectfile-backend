@@ -37,18 +37,3 @@ exports.updateProfile = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// GET notifications
-exports.getNotifications = async (req, res) => {
-  const pid = parseInt(req.query.provider_id);
-  try {
-    const [rows] = await db.query(
-      `SELECT id, title, message, type, is_read,
-              DATE_FORMAT(created_at, '%b %d') AS date,
-              TIMESTAMPDIFF(MINUTE, created_at, NOW()) AS minutes_ago
-       FROM notifications
-       WHERE user_id = ?
-       ORDER BY created_at DESC
-       LIMIT 20`, [pid]);
-    res.json(rows);
-  } catch (err) { res.status(500).json({ message: err.message }); }
-};

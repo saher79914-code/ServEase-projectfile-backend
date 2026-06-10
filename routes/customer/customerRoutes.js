@@ -9,3 +9,10 @@ module.exports = router;
 router.get("/provider/:id", ctrl.getProviderDetail);
 router.post("/bookings",    ctrl.createBooking);
 router.get("/bookings",     ctrl.getMyBookings);
+
+router.get ("/profile",         ctrl.getProfile);
+router.put ("/profile",         ctrl.updateProfile);
+router.put ("/change-password", ctrl.changePassword);
+router.post("/forgot-password", ctrl.forgotPassword);
+router.get("/notifications",        ctrl.getNotifications);
+router.put("/notifications/:id/read", ctrl.markNotificationRead);
