@@ -173,6 +173,33 @@ const registerAdmin = async (req, res) => {
     );
 
     const user = { id: result.insertId, full_name, email, role: "admin" };
+    // Admin ko notify karo
+try {
+  await db.query(
+    `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+     SELECT id, 'customer', 'New Customer Registered',
+            CONCAT('New customer signed up: ', ?), 'admin', 0
+     FROM users WHERE role = 'admin' LIMIT 1`,
+    [full_name]
+  );
+} catch (e) { console.error('Notif error:', e.message); }
+
+return sendTokenResponse(res, 201, user, "customer");
+// Admin ko notify karo
+try {
+  await db.query(
+    `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+     SELECT id, 'customer', 'New Provider Registered',
+            CONCAT('New provider registered: ', ?, ' — Service: ', ?), 'admin', 0
+     FROM users WHERE role = 'admin' LIMIT 1`,
+    [full_name, service_name]
+  );
+} catch (e) { console.error('Notif error:', e.message); }
+
+return res.status(201).json({
+  success: true,
+  message: "Provider registered successfully"
+});
     return sendTokenResponse(res, 201, user, "admin");
 
   } catch (err) {

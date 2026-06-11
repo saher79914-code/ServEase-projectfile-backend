@@ -156,8 +156,24 @@ exports.submitCommission = async (req, res) => {
       `INSERT INTO commission_payments (provider_id, amount, payment_method, screenshot, status, created_at)
        VALUES (?, ?, ?, ?, 'pending', NOW())`,
       [provider_id, amount, payment_method, screenshot]);
+
     await db.query(
-      `UPDATE provider_profiles SET pending_commission = 0 WHERE user_id = ?`, [provider_id]);
+      `UPDATE provider_profiles SET pending_commission = 0 WHERE user_id = ?`,
+      [provider_id]);
+
+    // Admin ko notify karo
+    try {
+      const [[provider]] = await db.query(
+        `SELECT u.full_name FROM users u WHERE u.id = ?`, [provider_id]);
+
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'Commission Submitted',
+                CONCAT('Provider ', ?, ' ne RS ', ?, ' commission submit ki'), 'admin', 0
+         FROM users WHERE role = 'admin' LIMIT 1`,
+        [provider?.full_name ?? 'Unknown', amount]);
+    } catch (e) { console.error('Notif error:', e.message); }
+
     res.json({ message: "Commission submitted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
