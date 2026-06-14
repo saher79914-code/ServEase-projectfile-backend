@@ -1,13 +1,8 @@
-const express = require("express");
-const router = express.Router();
+const router = require("express").Router();
+const ctrl = require("../controllers/ComplaintController");
 
-const {
-    getAllComplaints,
-    resolveComplaint
-} = require("../controllers/complaintController");
-
-// admin only
-router.get("/", getAllComplaints);
-router.put("/resolve/:id", resolveComplaint);
+router.get("/complaints",            ctrl.getComplaints);
+router.put("/complaints/:id/action", ctrl.takeAction);
+router.get("/ratings",               ctrl.getRatings);
 
 module.exports = router;

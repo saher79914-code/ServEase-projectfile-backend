@@ -247,3 +247,38 @@ exports.markNotificationRead = async (req, res) => {
     res.json({ message: "Marked as read" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
+// CLEAR ALL NOTIFICATIONS (Provider)
+exports.clearNotifications = async (req, res) => {
+  const pid = parseInt(req.query.provider_id);
+  try {
+    await db.query(
+      `DELETE FROM notifications WHERE user_id = ? AND role = 'provider'`,
+      [pid]
+    );
+    res.json({ message: "Notifications cleared" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+// POST submit complaint (provider against customer)
+exports.submitComplaint = async (req, res) => {
+  const { provider_id, booking_id, title, message } = req.body;
+  try {
+    const [[booking]] = await db.query(
+      `SELECT customer_id FROM bookings WHERE id = ?`, [booking_id]);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    await db.query(
+      `INSERT INTO complaints (user_id, booking_id, title, message, status, against_user_id, complainant_role)
+       VALUES (?, ?, ?, ?, 'pending', ?, 'provider')`,
+      [provider_id, booking_id, title, message, booking.customer_id]);
+
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'New Complaint',
+                CONCAT('New complaint filed against a customer (booking #', ?, ')'), 'complaint', 0
+         FROM users WHERE role = 'admin' LIMIT 1`, [booking_id]);
+    } catch (e) { console.error('Notif error:', e.message); }
+
+    res.json({ message: "Complaint submitted" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};

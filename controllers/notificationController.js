@@ -70,3 +70,13 @@ exports.getNotifications = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+// CLEAR ALL NOTIFICATIONS (Admin — deletes everything)
+exports.clearAllNotifications = async (req, res) => {
+  try {
+    await db.query(`DELETE FROM notifications`);
+    res.status(200).json({ success: true, message: "All notifications cleared" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

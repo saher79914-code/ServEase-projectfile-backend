@@ -1,9 +1,7 @@
 const db = require("../config/db");
 
-// Checks if user is blocked before allowing access
 const checkBlocked = async (req, res, next) => {
   try {
-    // provider_id ya customer_id query, body, ya params se le lo
     const userId =
       req.query.provider_id ||
       req.query.customer_id ||
@@ -11,7 +9,7 @@ const checkBlocked = async (req, res, next) => {
       req.body.customer_id ||
       req.params.id;
 
-    if (!userId) return next(); // agar id nahi mili, normal chalne do
+    if (!userId) return next();
 
     const [[user]] = await db.query(
       `SELECT is_blocked FROM users WHERE id = ?`, [userId]
@@ -28,7 +26,7 @@ const checkBlocked = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("checkBlocked error:", err.message);
-    next(); // error ho toh request block na karo, aage jaane do
+    next();
   }
 };
 

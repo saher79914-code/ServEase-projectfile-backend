@@ -150,7 +150,7 @@ exports.getMyBookings = async (req, res) => {
   const customerId = parseInt(req.query.customer_id);
   try {
     const [rows] = await db.query(
-      `SELECT b.id, u.full_name AS provider_name, s.name AS service_name,
+      `SELECT b.id, b.provider_id, u.full_name AS provider_name, s.name AS service_name,
               b.scheduled_date, b.scheduled_time, b.status, b.total_price
        FROM bookings b
        JOIN users u ON u.id = b.provider_id
@@ -214,7 +214,7 @@ exports.forgotPassword = async (req, res) => {
     res.json({ message: "Reset link sent to your email" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
-// GET notifications
+
 // GET notifications
 exports.getNotifications = async (req, res) => {
   const customerId = parseInt(req.query.customer_id);
@@ -236,5 +236,68 @@ exports.markNotificationRead = async (req, res) => {
   try {
     await db.query(`UPDATE notifications SET is_read = 1 WHERE id = ?`, [notifId]);
     res.json({ message: "Marked as read" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+// CLEAR ALL NOTIFICATIONS (Customer)
+exports.clearNotifications = async (req, res) => {
+  const customerId = parseInt(req.query.customer_id);
+  try {
+    await db.query(
+      `DELETE FROM notifications WHERE user_id = ? AND role = 'customer'`,
+      [customerId]
+    );
+    res.json({ message: "Notifications cleared" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+// POST submit complaint (customer against provider)
+exports.submitComplaint = async (req, res) => {
+  const { customer_id, booking_id, title, message } = req.body;
+  try {
+    const [[booking]] = await db.query(
+      `SELECT provider_id FROM bookings WHERE id = ?`, [booking_id]);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    await db.query(
+      `INSERT INTO complaints (user_id, booking_id, title, message, status, against_user_id, complainant_role)
+       VALUES (?, ?, ?, ?, 'pending', ?, 'customer')`,
+      [customer_id, booking_id, title, message, booking.provider_id]);
+
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'New Complaint',
+                CONCAT('New complaint filed against a provider (booking #', ?, ')'), 'complaint', 0
+         FROM users WHERE role = 'admin' LIMIT 1`, [booking_id]);
+    } catch (e) { console.error('Notif error:', e.message); }
+
+    res.json({ message: "Complaint submitted" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// POST submit rating
+exports.submitRating = async (req, res) => {
+  const { booking_id, customer_id, provider_id, rating, note } = req.body;
+  try {
+    await db.query(
+      `INSERT INTO ratings (booking_id, customer_id, provider_id, rating, note)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE rating = ?, note = ?`,
+      [booking_id, customer_id, provider_id, rating, note || null, rating, note || null]);
+
+    const [[avg]] = await db.query(
+      `SELECT AVG(rating) AS avg_rating FROM ratings WHERE provider_id = ?`, [provider_id]);
+    await db.query(
+      `UPDATE provider_profiles SET rating = ? WHERE user_id = ?`,
+      [avg.avg_rating || 0, provider_id]);
+
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'New Rating Received',
+                CONCAT('A provider received a ', ?, '-star rating'), 'system', 0
+         FROM users WHERE role = 'admin' LIMIT 1`, [rating]);
+    } catch (e) { console.error('Notif error:', e.message); }
+
+    res.json({ message: "Rating submitted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

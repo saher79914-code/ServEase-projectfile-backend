@@ -16,3 +16,6 @@ router.put ("/change-password", ctrl.changePassword);
 router.post("/forgot-password", ctrl.forgotPassword);
 router.get("/notifications",        ctrl.getNotifications);
 router.put("/notifications/:id/read", ctrl.markNotificationRead);
+router.delete("/notifications/clear", ctrl.clearNotifications);
+router.post("/complaints", ctrl.submitComplaint);
+router.post("/ratings",    ctrl.submitRating);
