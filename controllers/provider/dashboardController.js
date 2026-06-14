@@ -233,9 +233,17 @@ exports.getNotifications = async (req, res) => {
               DATE_FORMAT(created_at, '%b %d') AS date,
               TIMESTAMPDIFF(MINUTE, created_at, NOW()) AS minutes_ago
        FROM notifications
-       WHERE user_id = ? AND role = 'provider'
+       WHERE (user_id = ? OR user_id IS NULL) AND role = 'provider'
        ORDER BY created_at DESC
        LIMIT 20`, [pid]);
     res.json(rows);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+// MARK NOTIFICATION AS READ
+exports.markNotificationRead = async (req, res) => {
+  const notifId = parseInt(req.params.id);
+  try {
+    await db.query(`UPDATE notifications SET is_read = 1 WHERE id = ?`, [notifId]);
+    res.json({ message: "Marked as read" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

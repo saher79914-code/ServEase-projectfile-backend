@@ -13,10 +13,12 @@ router.put ("/jobs/:id/status",       ctrl.updateJobStatus);
 router.post("/commission/submit",     upload.single("screenshot"), ctrl.submitCommission);
 router.get("/earnings", ctrl.getEarnings);
 
+
 module.exports = router;
 // Profile routes
 const profileCtrl = require("../../controllers/provider/providerProfileController");
 router.get ("/profile",              profileCtrl.getProfile);
 router.put ("/profile",              profileCtrl.updateProfile);
 router.get ("/notifications",        ctrl.getNotifications);
+router.put("/notifications/:id/read", ctrl.markNotificationRead);
  

@@ -215,13 +215,14 @@ exports.forgotPassword = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 // GET notifications
+// GET notifications
 exports.getNotifications = async (req, res) => {
   const customerId = parseInt(req.query.customer_id);
   try {
     const [rows] = await db.query(
       `SELECT id, title, message, type, is_read, created_at
        FROM notifications
-       WHERE user_id = ? AND role = 'customer'
+       WHERE (user_id = ? OR user_id IS NULL) AND role = 'customer'
        ORDER BY created_at DESC`,
       [customerId]
     );

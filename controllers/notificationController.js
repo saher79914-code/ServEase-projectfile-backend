@@ -1,19 +1,31 @@
 const db = require("../config/db");
 
+const allowedTypes = ["verification", "complaint", "system", "booking", "admin"];
+const allowedRoles = ["customer", "provider"];
+
 // SEND NOTIFICATION (Admin)
 exports.sendNotification = async (req, res) => {
   try {
     const { user_id, title, message, type, role } = req.body;
 
-    const allowedTypes = ["verification", "complaint", "system", "booking", "admin"];
-    if (!allowedTypes.includes(type || "system")) {
+    if (!title || !message) {
+      return res.status(400).json({ success: false, message: "Title and message required" });
+    }
+
+    const notifType = type || "system";
+    const notifRole = role || "customer";
+
+    if (!allowedTypes.includes(notifType)) {
       return res.status(400).json({ success: false, message: "Invalid notification type" });
+    }
+    if (!allowedRoles.includes(notifRole)) {
+      return res.status(400).json({ success: false, message: "Invalid role" });
     }
 
     await db.query(
       `INSERT INTO notifications (user_id, role, title, message, type, is_read)
        VALUES (?, ?, ?, ?, ?, 0)`,
-      [user_id || null, role || "customer", title, message, type || "system"]
+      [user_id || null, notifRole, title, message, notifType]
     );
 
     res.status(200).json({ success: true, message: "Notification sent" });
@@ -23,12 +35,13 @@ exports.sendNotification = async (req, res) => {
   }
 };
 
-// GET ALL NOTIFICATIONS (Admin view)
+// GET ALL NOTIFICATIONS (Admin view) — with sender/receiver info
 exports.getAllNotifications = async (req, res) => {
   try {
     const [result] = await db.query(
       `SELECT n.id, n.title, n.message, n.type, n.role, n.is_read,
-              n.created_at, u.full_name AS user_name
+              n.created_at, n.user_id,
+              u.full_name AS user_name, u.email AS user_email
        FROM notifications n
        LEFT JOIN users u ON u.id = n.user_id
        ORDER BY n.created_at DESC
@@ -41,7 +54,7 @@ exports.getAllNotifications = async (req, res) => {
   }
 };
 
-// GET NOTIFICATIONS (User side)
+// GET NOTIFICATIONS (User side — generic)
 exports.getNotifications = async (req, res) => {
   try {
     const userId = req.params.userId;
