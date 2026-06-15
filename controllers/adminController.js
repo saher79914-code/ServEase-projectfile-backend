@@ -34,7 +34,9 @@ const getDashboardStats = async (req, res) => {
     const [adminData] = await db.query(
   "SELECT full_name,email FROM users WHERE role='admin'"
     );
-
+const [[{ count: pendingSecurityDeposits }]] = await db.query(
+  `SELECT COUNT(*) AS count FROM provider_profiles WHERE security_deposit_status = 'submitted'`
+);
     res.status(200).json({
       success: true,
       totalUsers: users[0].totalUsers,
@@ -46,6 +48,7 @@ const getDashboardStats = async (req, res) => {
       pendingProviders: pendingProviders[0].pendingProviders,
       adminName:adminData[0]?.full_name || "",
       adminEmail:adminData[0]?.email || "",
+      pendingSecurityDeposits: pendingSecurityDeposits,
     });
 
   } catch (error) {

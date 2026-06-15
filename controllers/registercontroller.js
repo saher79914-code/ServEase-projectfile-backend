@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
-const JWT_EXPIRES_IN = "7d";
+const JWT_EXPIRES_IN = "7d"; // Token valid for 7 days
 
 // ── Helper: Generate Token ─────────────────────────────────────────
 const generateToken = (id, role) => {
@@ -18,12 +18,10 @@ const sendTokenResponse = (res, statusCode, user, role) => {
 
 // ═══════════════════════════════════════════════════════════════════
 // REGISTER CUSTOMER
-// POST /auth/register/customer
 // ═══════════════════════════════════════════════════════════════════
 const registerCustomer = async (req, res) => {
   try {
     const { full_name, email, phone, cnic, address, password } = req.body;
-    console.log("registerCustomer called with:", req.body);
 
     if (!full_name || !email || !phone || !cnic || !address || !password)
       return res.status(400).json({ success: false, message: "All fields are required" });
@@ -53,6 +51,17 @@ const registerCustomer = async (req, res) => {
       [full_name, email, phone, cnic, address, hashed]
     );
 
+    // Admin ko notify karo
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'New Customer Registered',
+                CONCAT('New customer signed up: ', ?), 'admin', 0
+         FROM users WHERE role = 'admin' LIMIT 1`,
+        [full_name]
+      );
+    } catch (e) { console.error('Notif error:', e.message); }
+
     const user = { id: result.insertId, full_name, email, phone, cnic, address, role: "customer" };
     return sendTokenResponse(res, 201, user, "customer");
 
@@ -63,13 +72,10 @@ const registerCustomer = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// REGISTER PROVIDER
-// POST /auth/register/provider
-// Single users table — sab kuch yahan save hoga
+// REGISTER PROVIDER — with CNIC front/back images
 // ═══════════════════════════════════════════════════════════════════
 const registerProvider = async (req, res) => {
   try {
-
     const {
       full_name,
       email,
@@ -83,70 +89,81 @@ const registerProvider = async (req, res) => {
       bio,
     } = req.body;
 
-    console.log("registerProvider called with:", req.body);
+    // Validation
+    if (!full_name || !email || !phone || !cnic || !address || !password || !service_name)
+      return res.status(400).json({ success: false, message: "All fields are required" });
 
-    // Find service id from services table
+    // CNIC images — req.files (multer.fields)
+    const cnicFront = req.files?.cnic_front?.[0];
+    const cnicBack = req.files?.cnic_back?.[0];
+
+    if (!cnicFront || !cnicBack) {
+      return res.status(400).json({
+        success: false,
+        message: "Both CNIC front and back images are required"
+      });
+    }
+
+    const cnicFrontPath = `/uploads/cnic/${cnicFront.filename}`;
+    const cnicBackPath = `/uploads/cnic/${cnicBack.filename}`;
+
+    // Find service id
     const [serviceRows] = await db.query(
       `SELECT id FROM services WHERE name = ? LIMIT 1`,
       [service_name]
     );
 
     if (serviceRows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Selected service not found"
-      });
+      return res.status(404).json({ success: false, message: "Selected service not found" });
     }
 
     const service_id = serviceRows[0].id;
 
+    const [byEmail] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (byEmail.length > 0)
+      return res.status(409).json({ success: false, message: "Email already registered" });
+
     const hashed = await bcrypt.hash(password, 12);
 
     const [userResult] = await db.query(
-      `INSERT INTO users
-      (full_name,email,phone,cnic,address,password,role)
-      VALUES (?,?,?,?,?,?,'provider')`,
-      [full_name,email,phone,cnic,address,hashed]
+      `INSERT INTO users (full_name, email, phone, cnic, address, password, role)
+       VALUES (?, ?, ?, ?, ?, ?, 'provider')`,
+      [full_name, email, phone, cnic, address, hashed]
     );
 
     const userId = userResult.insertId;
 
     await db.query(
       `INSERT INTO provider_profiles
-      (
-        user_id,
-        service_id,
-        years_of_experience,
-        bio
-      )
-      VALUES (?,?,?,?)`,
-      [
-        userId,
-        service_id,
-        years_of_experience ?? 0,
-        bio ?? null
-      ]
+       (user_id, service_id, years_of_experience, bio, cnic_front_image, cnic_back_image, approval_status)
+       VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+      [userId, service_id, years_of_experience ?? 0, bio ?? null, cnicFrontPath, cnicBackPath]
     );
+
+    // Admin ko notify karo
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'New Provider Registered',
+                CONCAT('New provider registered: ', ?, ' — Service: ', ?), 'admin', 0
+         FROM users WHERE role = 'admin' LIMIT 1`,
+        [full_name, service_name]
+      );
+    } catch (e) { console.error('Notif error:', e.message); }
 
     return res.status(201).json({
       success: true,
-      message: "Provider registered successfully"
+      message: "Provider registered successfully. Waiting for admin approval."
     });
 
   } catch (err) {
-
-    console.error(err);
-
-    return res.status(500).json({
-      success: false,
-      message: "Server error"
-    });
+    console.error("registerProvider error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 // ═══════════════════════════════════════════════════════════════════
 // REGISTER ADMIN
-// POST /auth/register/admin
 // ═══════════════════════════════════════════════════════════════════
 const registerAdmin = async (req, res) => {
   try {
@@ -173,33 +190,6 @@ const registerAdmin = async (req, res) => {
     );
 
     const user = { id: result.insertId, full_name, email, role: "admin" };
-    // Admin ko notify karo
-try {
-  await db.query(
-    `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-     SELECT id, 'customer', 'New Customer Registered',
-            CONCAT('New customer signed up: ', ?), 'admin', 0
-     FROM users WHERE role = 'admin' LIMIT 1`,
-    [full_name]
-  );
-} catch (e) { console.error('Notif error:', e.message); }
-
-return sendTokenResponse(res, 201, user, "customer");
-// Admin ko notify karo
-try {
-  await db.query(
-    `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-     SELECT id, 'customer', 'New Provider Registered',
-            CONCAT('New provider registered: ', ?, ' — Service: ', ?), 'admin', 0
-     FROM users WHERE role = 'admin' LIMIT 1`,
-    [full_name, service_name]
-  );
-} catch (e) { console.error('Notif error:', e.message); }
-
-return res.status(201).json({
-  success: true,
-  message: "Provider registered successfully"
-});
     return sendTokenResponse(res, 201, user, "admin");
 
   } catch (err) {
@@ -209,9 +199,7 @@ return res.status(201).json({
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// LOGIN — single endpoint for all roles
-// POST /auth/login
-// Body: { email, password }  — role auto-detect from DB
+// LOGIN
 // ═══════════════════════════════════════════════════════════════════
 const login = async (req, res) => {
   try {
@@ -220,32 +208,43 @@ const login = async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ success: false, message: "Email and password required" });
 
-    const [rows] = await db.query(
-      "SELECT * FROM users WHERE email = ? LIMIT 1",
-      [email]
-    );
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ? LIMIT 1", [email]);
 
     if (rows.length === 0)
       return res.status(401).json({ success: false, message: "Invalid email or password" });
 
     const user = rows[0];
 
-    // ── Password check ─────────────────────────────────────────────
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(401).json({ success: false, message: "Invalid email or password" });
 
-   // ── Provider approval check ────────────────────────────────────
-    //is_approved: 0=Pending, 2=Approved, 3=Rejected
-    if (user.role === "provider" && user.is_approved !== 2) 
+    // ── Provider approval check ──
+    if (user.role === "provider") {
+      const [[profile]] = await db.query(
+        `SELECT approval_status FROM provider_profiles WHERE user_id = ?`, [user.id]
+      );
 
-    // ── Blocked user check ─────────────────────────────────────────
+      if (!profile || profile.approval_status === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: "Your account is pending admin approval"
+        });
+      }
+
+      if (profile.approval_status === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          message: "Your provider account was rejected by admin"
+        });
+      }
+    }
+
+    // ── Blocked user check ──
     if (user.is_blocked == 1)
       return res.status(403).json({ success: false, message: "Your account has been blocked" });
 
-    // ── Remove password before sending ────────────────────────────
     const { password: _pwd, ...safeUser } = user;
-
     return sendTokenResponse(res, 200, safeUser, user.role);
 
   } catch (err) {
@@ -255,8 +254,7 @@ const login = async (req, res) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// GET ME — from JWT token
-// GET /auth/me
+// GET ME
 // ═══════════════════════════════════════════════════════════════════
 const getMe = async (req, res) => {
   try {

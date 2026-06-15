@@ -29,16 +29,17 @@ exports.getProfile = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 // GET PENDING PROVIDERS
+// GET PENDING PROVIDERS
 exports.getPendingProviders = async (req, res) => {
     try {
-
         const sql = `
             SELECT 
                 u.id,
                 u.full_name,
                 u.email,
                 u.phone,
-                p.cnic_image,
+                p.cnic_front_image,
+                p.cnic_back_image,
                 p.bio,
                 p.years_of_experience,
                 p.approval_status
@@ -50,19 +51,10 @@ exports.getPendingProviders = async (req, res) => {
 
         const [result] = await db.query(sql);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
-
+        res.status(200).json({ success: true, data: result });
     } catch (error) {
-
         console.error("Pending Providers Error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
+        res.status(500).json({ success: false, message: "Server Error" });
     }
 };
 
@@ -175,50 +167,26 @@ async (req, res) => {
     });
   }
 };
-exports.getAcceptanceList =
-async (req, res) => {
-
+// GET ACCEPTANCE LIST (APPROVED + REJECTED)
+exports.getAcceptanceList = async (req, res) => {
   try {
-
-    const [result] =
-    await db.query(
-      `
+    const [result] = await db.query(`
       SELECT
       users.id,
       users.full_name,
       users.email,
-      provider_profiles.cnic_image,
+      provider_profiles.cnic_front_image,
+      provider_profiles.cnic_back_image,
       provider_profiles.approval_status
-
       FROM provider_profiles
-
-      JOIN users
-      ON users.id =
-      provider_profiles.user_id
-
-      WHERE provider_profiles.approval_status
-      IN ('approved','rejected')
-
+      JOIN users ON users.id = provider_profiles.user_id
+      WHERE provider_profiles.approval_status IN ('approved','rejected')
       ORDER BY users.id DESC
-      `
-    );
+    `);
 
-    res.status(200).json({
-
-      success: true,
-
-      data: result,
-    });
-
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
-
     console.log(error);
-
-    res.status(500).json({
-
-      success: false,
-
-      message: "Server Error",
-    });
+    res.status(500).json({ success: false, message: "Server Error" });
   }
 };

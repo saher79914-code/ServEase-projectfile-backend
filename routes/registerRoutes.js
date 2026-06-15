@@ -1,4 +1,3 @@
-// routes/registerRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
@@ -9,7 +8,8 @@ const {
   getMe,
 } = require("../controllers/registerController");
 
-// Simple JWT middleware — inline
+const { cnicUpload } = require("../middleware/uploads");
+
 const jwt = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
@@ -28,9 +28,19 @@ const authMiddleware = (req, res, next) => {
 };
 
 router.post("/register/customer", registerCustomer);
-router.post("/register/provider", registerProvider);
-router.post("/register/admin",    registerAdmin);
-router.post("/login",             login);
-router.get("/me",                 authMiddleware, getMe);
+
+// Provider registration — 2 images: cnic_front, cnic_back
+router.post(
+  "/register/provider",
+  cnicUpload.fields([
+    { name: "cnic_front", maxCount: 1 },
+    { name: "cnic_back", maxCount: 1 },
+  ]),
+  registerProvider
+);
+
+router.post("/register/admin", registerAdmin);
+router.post("/login", login);
+router.get("/me", authMiddleware, getMe);
 
 module.exports = router;

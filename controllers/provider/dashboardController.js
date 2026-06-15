@@ -70,21 +70,41 @@ exports.getAllJobs = async (req, res) => {
 
 // ACCEPT JOB
 exports.acceptJob = async (req, res) => {
+  const jobId = req.params.id;
   try {
-    await db.query(
-      `UPDATE bookings SET status = 'accepted' WHERE id = ?`, [req.params.id]);
-
     const [[booking]] = await db.query(
-      `SELECT customer_id FROM bookings WHERE id = ?`, [req.params.id]);
+      `SELECT provider_id, customer_id FROM bookings WHERE id = ?`, [jobId]);
+    if (!booking) return res.status(404).json({ message: "Job not found" });
 
-    if (booking) {
-      try {
-        await db.query(
-          `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-           VALUES (?, 'customer', 'Booking Accepted!', 'Your booking has been accepted by the provider.', 'booking', 0)`,
-          [booking.customer_id]);
-      } catch (e) { console.error('Notif error:', e.message); }
+    const [[profile]] = await db.query(
+      `SELECT pending_commission, security_deposit_status FROM provider_profiles WHERE user_id = ?`,
+      [booking.provider_id]);
+
+    // Security deposit check
+    if (profile && profile.security_deposit_status !== 'verified') {
+      return res.status(403).json({
+        message: "Security deposit required before accepting jobs",
+        code: "SECURITY_DEPOSIT_REQUIRED"
+      });
     }
+
+    // Pending commission check
+    if (profile && parseFloat(profile.pending_commission) > 0) {
+      return res.status(403).json({
+        message: "Please pay pending commission before accepting new jobs",
+        code: "COMMISSION_DUE",
+        commission_due: parseFloat(profile.pending_commission)
+      });
+    }
+
+    await db.query(`UPDATE bookings SET status = 'accepted' WHERE id = ?`, [jobId]);
+
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, 'customer', 'Booking Accepted!', 'Your booking has been accepted by the provider.', 'booking', 0)`,
+        [booking.customer_id]);
+    } catch (e) { console.error('Notif error:', e.message); }
 
     res.json({ message: "Job accepted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -117,21 +137,22 @@ exports.updateJobStatus = async (req, res) => {
   const { status } = req.body;
   const bookingId = parseInt(req.params.id);
   try {
+    const [[booking]] = await db.query(
+      `SELECT customer_id, provider_id, total_price FROM bookings WHERE id = ?`, [bookingId]);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
     await db.query(
       `UPDATE bookings SET status = ? WHERE id = ?`, [status, bookingId]);
 
-    const [[booking]] = await db.query(
-      `SELECT customer_id FROM bookings WHERE id = ?`, [bookingId]);
-
+    // Notification for customer
     const messages = {
       accepted:    { title: 'Booking Confirmed',   msg: 'Your booking has been confirmed.' },
       on_the_way:  { title: 'Provider On The Way', msg: 'Your provider is on the way to your location.' },
       in_progress: { title: 'Work Started',        msg: 'Your service is now in progress.' },
       completed:   { title: 'Job Completed',       msg: 'Your booking has been marked as completed.' },
     };
-
     const notif = messages[status];
-    if (notif && booking) {
+    if (notif) {
       try {
         await db.query(
           `INSERT INTO notifications (user_id, role, title, message, type, is_read)
@@ -140,7 +161,37 @@ exports.updateJobStatus = async (req, res) => {
       } catch (e) { console.error('Notif error:', e.message); }
     }
 
-    res.json({ message: "Status updated" });
+    let commissionTriggered = false;
+    let commissionAmount = 0;
+
+    // ── Commission calculation: job 3rd onwards ──
+    if (status === 'completed') {
+      const [[{ completedCount }]] = await db.query(
+        `SELECT COUNT(*) AS completedCount FROM bookings WHERE provider_id = ? AND status = 'completed'`,
+        [booking.provider_id]);
+
+      if (completedCount > 2) {
+        commissionAmount = parseFloat(booking.total_price) * 0.10;
+        await db.query(
+          `UPDATE provider_profiles SET pending_commission = pending_commission + ? WHERE user_id = ?`,
+          [commissionAmount, booking.provider_id]);
+
+        commissionTriggered = true;
+
+        try {
+          await db.query(
+            `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+             VALUES (?, 'provider', 'Commission Due', ?, 'admin', 0)`,
+            [booking.provider_id, `RS ${commissionAmount.toFixed(0)} commission added. Pay before accepting new jobs.`]);
+        } catch (e) { console.error('Notif error:', e.message); }
+      }
+    }
+
+    res.json({
+      message: "Status updated",
+      commission_triggered: commissionTriggered,
+      commission_amount: commissionAmount,
+    });
   } catch (err) {
     console.error('UPDATE STATUS ERROR:', err.message);
     res.status(500).json({ message: err.message });
@@ -280,5 +331,42 @@ exports.submitComplaint = async (req, res) => {
     } catch (e) { console.error('Notif error:', e.message); }
 
     res.json({ message: "Complaint submitted" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+// SUBMIT SECURITY DEPOSIT
+exports.submitSecurityDeposit = async (req, res) => {
+  const pid = parseInt(req.body.provider_id);
+  const method = req.body.payment_method;
+  const screenshot = req.file?.filename ?? null;
+
+  if (!screenshot) return res.status(400).json({ message: "Screenshot is required" });
+
+  try {
+    await db.query(
+      `UPDATE provider_profiles 
+       SET security_deposit_status = 'submitted', security_deposit_screenshot = ?, security_deposit_method = ?
+       WHERE user_id = ?`,
+      [screenshot, method, pid]);
+
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         SELECT id, 'customer', 'Security Deposit Submitted',
+                CONCAT('Provider #', ?, ' submitted RS 500 security deposit proof'), 'admin', 0
+         FROM users WHERE role = 'admin' LIMIT 1`,
+        [pid]);
+    } catch (e) { console.error('Notif error:', e.message); }
+
+    res.json({ message: "Security deposit submitted, awaiting verification" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// GET SECURITY DEPOSIT STATUS
+exports.getSecurityDepositStatus = async (req, res) => {
+  const pid = parseInt(req.query.provider_id);
+  try {
+    const [[row]] = await db.query(
+      `SELECT security_deposit_status FROM provider_profiles WHERE user_id = ?`, [pid]);
+    res.json({ status: row?.security_deposit_status ?? 'pending' });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

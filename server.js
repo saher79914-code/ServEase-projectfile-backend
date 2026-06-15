@@ -10,6 +10,7 @@ app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // PATCH add kiya ✅
   allowedHeaders: ["Content-Type", "Authorization"]
+  
 }));
 
 app.use(express.json());
@@ -45,6 +46,9 @@ app.use("/api/admin/commissions", require("./routes/adminCommissionRoutes"));
 app.use("/api/admin/bookings", require("./routes/adminBookingsRoutes"));
 app.use("/api/customer", require("./routes/customer/customerRoutes"));
 app.use("/api/admin", require("./routes/complaintRoutes"));
+app.use("/api/auth", require("./routes/registerRoutes"));
+app.use("/api/admin", require("./routes/adminSecurityRoutes"));
+
 
 
 
