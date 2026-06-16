@@ -1,64 +1,47 @@
-const db = require('../config/db');
+const db = require("../config/db");
 
-const getDashboardStats = async (req, res) => {
+exports.getDashboardStats = async (req, res) => {
   try {
+    const [[{ totalUsers }]] = await db.query(
+      `SELECT COUNT(*) AS totalUsers FROM users`);
+    const [[{ totalCustomers }]] = await db.query(
+      `SELECT COUNT(*) AS totalCustomers FROM users WHERE role = 'customer'`);
+    const [[{ totalProviders }]] = await db.query(
+      `SELECT COUNT(*) AS totalProviders FROM users WHERE role = 'provider'`);
+    const [[{ totalServices }]] = await db.query(
+      `SELECT COUNT(*) AS totalServices FROM services WHERE is_active = 1`);
+    const [[{ totalBookings }]] = await db.query(
+      `SELECT COUNT(*) AS totalBookings FROM bookings`);
+    const [[{ openComplaints }]] = await db.query(
+      `SELECT COUNT(*) AS openComplaints FROM complaints WHERE status = 'pending'`);
+    const [[{ pendingProviders }]] = await db.query(
+      `SELECT COUNT(*) AS pendingProviders FROM provider_profiles WHERE approval_status = 'pending'`);
 
-    const [users] = await db.query(
-      'SELECT COUNT(*) AS totalUsers FROM users'
-    );
+    // Commission payments (10% wali)
+    const [[{ commissionEarned }]] = await db.query(
+      `SELECT COALESCE(SUM(amount), 0) AS commissionEarned 
+       FROM commission_payments WHERE status = 'verified'`);
 
-    const [customers] = await db.query(
-      'SELECT COUNT(*) AS totalCustomers FROM users WHERE role = "customer"'
-    );
+    // Security deposits
+    const [[{ securityDeposits }]] = await db.query(
+      `SELECT COUNT(*) AS securityDeposits 
+       FROM provider_profiles WHERE security_deposit_status = 'verified'`);
 
-    const [providers] = await db.query(
-      'SELECT COUNT(*) AS totalProviders FROM users WHERE role = "provider"'
-    );
+    // Security deposit amount (agar amount column hai to)
+    const [[{ securityAmount }]] = await db.query(
+      `SELECT COALESCE(SUM(500), 0) AS securityAmount 
+       FROM provider_profiles WHERE security_deposit_status = 'verified'`).catch(() => [[{ securityAmount: 0 }]]);
 
-    const [services] = await db.query(
-      'SELECT COUNT(*) AS totalServices FROM services'
-    );
+    const totalEarnings = parseFloat(commissionEarned) + parseFloat(securityAmount || 0);
 
-    const [bookings] = await db.query(
-      'SELECT COUNT(*) AS totalBookings FROM bookings'
-    );
-
-    const [pendingProviders] = await db.query(
-      'SELECT COUNT(*) AS pendingProviders FROM provider_profiles WHERE approval_status = "pending"'
-    );
-
-    const [complaintsResult] = await db.query(
-  "SELECT COUNT(*) AS openComplaints FROM complaints WHERE status = 'pending'"
-    );
-
-    const [adminData] = await db.query(
-  "SELECT full_name,email FROM users WHERE role='admin'"
-    );
-const [[{ count: pendingSecurityDeposits }]] = await db.query(
-  `SELECT COUNT(*) AS count FROM provider_profiles WHERE security_deposit_status = 'submitted'`
-);
-    res.status(200).json({
-      success: true,
-      totalUsers: users[0].totalUsers,
-      totalCustomers: customers[0].totalCustomers,
-      totalProviders: providers[0].totalProviders,
-      totalServices: services[0].totalServices,
-      totalBookings: bookings[0].totalBookings,
-      openComplaints: complaintsResult[0].openComplaints,
-      pendingProviders: pendingProviders[0].pendingProviders,
-      adminName:adminData[0]?.full_name || "",
-      adminEmail:adminData[0]?.email || "",
-      pendingSecurityDeposits: pendingSecurityDeposits,
+    res.json({
+      totalUsers, totalCustomers, totalProviders,
+      totalServices, totalBookings, openComplaints,
+      pendingProviders,
+      commissionEarned:  parseFloat(commissionEarned),
+      securityDeposits:  parseInt(securityDeposits),
+      securityAmount:    parseFloat(securityAmount || 0),
+      totalEarnings,
     });
-
-  } catch (error) {
-    console.error("Dashboard Error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Server Error"
-    });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 };
-
-module.exports = { getDashboardStats };
