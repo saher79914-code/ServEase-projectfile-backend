@@ -18,6 +18,7 @@ router.get("/security-deposit/status", checkBlocked, ctrl.getSecurityDepositStat
 router.get("/earnings", checkBlocked, ctrl.getEarnings);
 router.post("/security-deposit/submit", checkBlocked, securityUpload.single("screenshot"), ctrl.submitSecurityDeposit);
 router.get ("/security-deposit/status", checkBlocked, ctrl.getSecurityDepositStatus);
+router.post("/complaints", checkBlocked, ctrl.submitComplaint);
 
 module.exports = router;
 
