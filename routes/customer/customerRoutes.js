@@ -4,8 +4,6 @@ const ctrl   = require("../../controllers/customer/customerController");
 router.get("/home",      ctrl.getHomeData);
 router.get("/providers", ctrl.getProviders);
 
-module.exports = router;
-
 router.get("/provider/:id", ctrl.getProviderDetail);
 router.post("/bookings",    ctrl.createBooking);
 router.get("/bookings",     ctrl.getMyBookings);
@@ -19,3 +17,5 @@ router.put("/notifications/:id/read", ctrl.markNotificationRead);
 router.delete("/notifications/clear", ctrl.clearNotifications);
 router.post("/complaints", ctrl.submitComplaint);
 router.post("/ratings",    ctrl.submitRating);
+
+module.exports = router;
