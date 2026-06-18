@@ -83,6 +83,7 @@ const registerProvider = async (req, res) => {
       cnic,
       address,
       password,
+      dateof_birth,
       category,
       service_name,
       years_of_experience,
@@ -90,7 +91,7 @@ const registerProvider = async (req, res) => {
     } = req.body;
 
     // Validation
-    if (!full_name || !email || !phone || !cnic || !address || !password || !service_name)
+    if (!full_name || !email || !phone || !cnic || !address || !password || !dateof_birth || !service_name)
       return res.status(400).json({ success: false, message: "All fields are required" });
 
     // CNIC images — req.files (multer.fields)
@@ -126,9 +127,9 @@ const registerProvider = async (req, res) => {
     const hashed = await bcrypt.hash(password, 12);
 
     const [userResult] = await db.query(
-      `INSERT INTO users (full_name, email, phone, cnic, address, password, role)
-       VALUES (?, ?, ?, ?, ?, ?, 'provider')`,
-      [full_name, email, phone, cnic, address, hashed]
+      `INSERT INTO users (full_name, email, phone, cnic, address, password, dateof_birth, role)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?,'provider')`,
+      [full_name, email, phone, cnic, address, hashed, dateof_birth]
     );
 
     const userId = userResult.insertId;

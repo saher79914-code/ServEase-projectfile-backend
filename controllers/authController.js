@@ -38,7 +38,12 @@ const sendOtp = async (req, res) => {
 
     await sendOtpEmail(email, full_name, otp);
 
-    return res.status(200).json({ success: true, message: "OTP sent to your email" });
+    console.log("OTP:", otp);
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent to your email"
+    });
   } catch (err) {
     console.error("sendOtp error:", err);
     return res.status(500).json({ success: false, message: "Failed to send OTP" });
@@ -183,6 +188,7 @@ const verifyResetToken = async (req, res) => {
 
     return res.status(200).json({ success: true, valid: true, email: rows[0].email });
   } catch (err) {
+    //console.error("verifyResetToken error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
