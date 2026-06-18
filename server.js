@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
 
@@ -27,23 +25,27 @@ app.use("/api/auth", require("./routes/registerRoutes"));
 app.use("/services", require("./routes/serviceRoutes"));
 app.use("/api/services", require("./routes/serviceRoutes"));
 
-// ── Admin ──
-app.use("/api/admin/settings", require("./routes/adminSettingsRoutes"));
-app.use("/api/admin", require("./routes/adminRoutes"));
-app.use("/api/admin", require("./routes/adminProfileRoutes"));
-app.use("/api/admin/users", require("./routes/userRoutes"));
-app.use("/api/admin/complaints", require("./routes/complaintRoutes"));
-app.use("/api/admin/notifications", require("./routes/notificationRoutes"));
-app.use("/api/admin/services", require("./routes/serviceRoutes"));
-app.use("/api/admin/providers", require("./routes/providerRoutes"));
-app.use("/api/admin/commissions", require("./routes/admincommissionroutes"));
-app.use("/api/admin/bookings", require("./routes/adminbookingsroutes"));
-app.use("/api/admin", require("./routes/adminSecurityRoutes"));
-app.use("/api/admin", require("./routes/complaintRoutes"));
+// ── Admin — specific routes PEHLE, generic baad mein ──
+app.use("/api/admin/settings",         require("./routes/adminSettingsRoutes"));
+app.use("/api/admin/service-requests", require("./routes/serviceRequestRoutes"));
+app.use("/api/admin/users",            require("./routes/userRoutes"));
+app.use("/api/admin/complaints",       require("./routes/complaintRoutes"));
+app.use("/api/admin/notifications",    require("./routes/notificationRoutes"));
+app.use("/api/admin/services",         require("./routes/serviceRoutes"));
+app.use("/api/admin/providers",        require("./routes/providerRoutes"));
+app.use("/api/admin/commissions",      require("./routes/admincommissionroutes"));
+app.use("/api/admin/bookings",         require("./routes/adminbookingsroutes"));
+app.use("/api/admin",                  require("./routes/adminRoutes"));
+app.use("/api/admin",                  require("./routes/adminProfileRoutes"));
+app.use("/api/admin",                  require("./routes/adminSecurityRoutes"));
+app.use("/api/admin",                  require("./routes/complaintRoutes"));
+
+// ── Service Requests (provider registration ke waqt) ──
+app.use("/api/service-requests", require("./routes/serviceRequestRoutes"));
 
 // ── Provider ──
-app.use("/api/provider", require("./routes/registerRoutes"));
-app.use("/api/provider", require("./routes/providerRoutes"));
+app.use("/api/provider",   require("./routes/registerRoutes"));
+app.use("/api/provider",   require("./routes/providerRoutes"));
 app.use("/api/providerside", require("./routes/provider/dashboardRoutes"));
 
 // ── Customer ──

@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const ctrl = require("../controllers/ComplaintController");
+const ctrl = require("../controllers/complaintController");
 
 router.get("/complaints",            ctrl.getComplaints);
 router.put("/complaints/:id/action", ctrl.takeAction);

@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const ctrl   = require("../controllers/adminBookingsController");
+const ctrl   = require("../controllers/Adminbookingscontroller");
 
 router.get("/", ctrl.getAllBookings);
 

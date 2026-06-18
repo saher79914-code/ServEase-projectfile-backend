@@ -43,3 +43,26 @@ CREATE TABLE IF NOT EXISTS app_settings (
 -- Insert default settings row
 INSERT IGNORE INTO app_settings (id, commission_rate, security_deposit_amount, security_deposit_required, app_name, support_email)
 VALUES (1, 10.00, 2000.00, TRUE, 'ServEase', 'adminservease@gmail.com');
+
+-- 4. Custom Service Requests Table
+CREATE TABLE IF NOT EXISTS service_requests (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  provider_id INT NOT NULL,
+  provider_name VARCHAR(255),
+  provider_email VARCHAR(255),
+  service_name VARCHAR(255) NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  custom_category VARCHAR(255),
+  description TEXT,
+  years_of_experience INT DEFAULT 0,
+  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  admin_note TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_status (status),
+  INDEX idx_provider (provider_id)
+);
+
+-- Services table mein icon aur price column add karo (agar nahi hain)
+ALTER TABLE services ADD COLUMN IF NOT EXISTS icon VARCHAR(10) DEFAULT '🔧';
+ALTER TABLE services ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) DEFAULT 0.00;

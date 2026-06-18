@@ -107,17 +107,17 @@ const registerProvider = async (req, res) => {
     const cnicFrontPath = `/uploads/cnic/${cnicFront.filename}`;
     const cnicBackPath = `/uploads/cnic/${cnicBack.filename}`;
 
-    // Find service id
-    const [serviceRows] = await db.query(
-      `SELECT id FROM services WHERE name = ? LIMIT 1`,
-      [service_name]
-    );
-
-    if (serviceRows.length === 0) {
-      return res.status(404).json({ success: false, message: "Selected service not found" });
+    // Find service id — NULL if custom or not found
+    let service_id = null;
+    if (service_name && service_name !== "Other — Specify Below" && service_name !== "Other") {
+      const [serviceRows] = await db.query(
+        `SELECT id FROM services WHERE name = ? LIMIT 1`,
+        [service_name]
+      );
+      if (serviceRows.length > 0) {
+        service_id = serviceRows[0].id;
+      }
     }
-
-    const service_id = serviceRows[0].id;
 
     const [byEmail] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
     if (byEmail.length > 0)

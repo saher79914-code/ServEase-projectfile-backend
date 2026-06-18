@@ -8,7 +8,7 @@ exports.getHomeData = async (req, res) => {
       `SELECT full_name, address AS city FROM users WHERE id = ?`, [userId]);
 
     const [services] = await db.query(
-      `SELECT id, name, icon, category, price FROM services WHERE is_active = 1 ORDER BY id LIMIT 8`);
+      `SELECT id, name, icon, category, price FROM services WHERE is_active = 1 ORDER BY id`);
 
     const [providers] = await db.query(
       `SELECT u.id, u.full_name AS name, s.name AS service, s.category,

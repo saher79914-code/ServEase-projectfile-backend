@@ -6,7 +6,7 @@ const {
   registerAdmin,
   login,
   getMe,
-} = require("../controllers/registerController");
+} = require("../controllers/registercontroller");
 
 const { cnicUpload } = require("../middleware/uploads");
 
