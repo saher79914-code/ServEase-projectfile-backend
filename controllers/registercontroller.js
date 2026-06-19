@@ -128,7 +128,7 @@ const registerProvider = async (req, res) => {
     const [userResult] = await db.query(
       `INSERT INTO users (full_name, email, phone, cnic, address, password, role)
        VALUES (?, ?, ?, ?, ?, ?, 'provider')`,
-      [full_name, email, phone, cnic, address, hashed]
+      [full_name, email, phone, cnic, address, hashed,]
     );
 
     const userId = userResult.insertId;
