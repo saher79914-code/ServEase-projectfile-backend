@@ -220,25 +220,25 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid email or password" });
 
     // ── Provider approval check ──
-    //if (user.role === "provider") {
-      //const [[profile]] = await db.query(
-       // `SELECT approval_status FROM provider_profiles WHERE user_id = ?`, [user.id]
-      //);
+    if (user.role === "provider") {
+      const [[profile]] = await db.query(
+       `SELECT approval_status FROM provider_profiles WHERE user_id = ?`, [user.id]
+    );
 
-      //if (!profile || profile.approval_status === 'pending') {
-       // return res.status(403).json({
-         // success: false,
-         // message: "Your account is pending admin approval"
-        //});
-      //}
+      if (!profile || profile.approval_status === 'pending') {
+        return res.status(403).json({
+          success: false,
+          message: "Your account is pending admin approval"
+        });
+      }
 
-      //if (profile.approval_status === 'rejected') {
-        //return res.status(403).json({
-          //success: false,
-          //message: "Your provider account was rejected by admin"
-        //});
-      //}
-    //}
+      if (profile.approval_status === 'rejected') {
+        return res.status(403).json({
+          success: false,
+          message: "Your provider account was rejected by admin"
+        });
+      }
+    }
 
     // ── Blocked user check ──
     if (user.is_blocked == 1)
