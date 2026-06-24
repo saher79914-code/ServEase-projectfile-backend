@@ -40,7 +40,7 @@ exports.getHomeData = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// GET providers (all or by category)
+// GET providers by (all or by category)
 exports.getProviders = async (req, res) => {
   const { category } = req.query;
   try {
@@ -77,7 +77,7 @@ exports.getProviders = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// GET provider detail
+// GET provider detail and services offered
 exports.getProviderDetail = async (req, res) => {
   const providerId = parseInt(req.params.id);
   try {
@@ -114,7 +114,7 @@ exports.getProviderDetail = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// POST create booking
+// POST create booking by side of customer
 exports.createBooking = async (req, res) => {
   const { customer_id, provider_id, service_id, scheduled_date, scheduled_time, location, total_price } = req.body;
   try {
