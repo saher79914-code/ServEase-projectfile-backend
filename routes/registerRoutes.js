@@ -6,6 +6,8 @@ const {
   registerAdmin,
   login,
   getMe,
+  sendOtp,
+  verifyOtp,
 } = require("../controllers/registerController");
 
 const { cnicUpload } = require("../middleware/uploads");
@@ -39,8 +41,11 @@ router.post(
   registerProvider
 );
 
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
 router.post("/register/admin", registerAdmin);
 router.post("/login", login);
 router.get("/me", authMiddleware, getMe);
+
 
 module.exports = router;

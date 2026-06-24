@@ -279,4 +279,17 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { registerCustomer, registerProvider, registerAdmin, login, getMe };
+const sendOtp = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "OTP API is working"
+  });
+};
+
+const verifyOtp = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Verify OTP API is working"
+  });
+};
+module.exports = { registerCustomer, registerProvider, registerAdmin, login, getMe, sendOtp, verifyOtp };
