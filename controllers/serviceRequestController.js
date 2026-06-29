@@ -1,5 +1,5 @@
 const db = require("../config/db");
-const { sendOtpEmail } = require("../utils/emailService");
+const { sendApprovalEmail, sendRejectionEmail } = require("../utils/emailService");
 
 // ─────────────────────────────────────────────────────────
 // PROVIDER — Submit Custom Service Request
@@ -108,10 +108,10 @@ const approveServiceRequest = async (req, res) => {
     // Provider ko notification send karo (agar email hai)
     if (request.provider_email) {
       try {
-        await sendOtpEmail(
+        await sendApprovalEmail(
           request.provider_email,
           request.provider_name || "Provider",
-          "✅ APPROVED"
+          request.service_name
         );
       } catch (e) {
         // Email fail ho to ignore karo
@@ -137,10 +137,30 @@ const rejectServiceRequest = async (req, res) => {
     const { id } = req.params;
     const { admin_note } = req.body;
 
+    const [[request]] = await db.query(
+      "SELECT * FROM service_requests WHERE id = ?",
+      [id]
+    );
+    if (!request)
+      return res.status(404).json({ success: false, message: "Request not found" });
+
     await db.query(
       "UPDATE service_requests SET status = 'rejected', admin_note = ? WHERE id = ?",
       [admin_note || "Rejected", id]
     );
+
+    if (request.provider_email) {
+      try {
+        await sendRejectionEmail(
+          request.provider_email,
+          request.provider_name || "Provider",
+          request.service_name,
+          admin_note || "Rejected"
+        );
+      } catch (e) {
+        // Email fail ho to ignore karo
+      }
+    }
 
     return res.status(200).json({ success: true, message: "Service request rejected" });
   } catch (err) {

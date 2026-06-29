@@ -22,6 +22,15 @@ exports.getComplaints = async (req, res) => {
 exports.takeAction = async (req, res) => {
   const complaintId = parseInt(req.params.id);
   const { action, admin_response } = req.body; // 'warn' | 'block' | 'dismiss'
+
+  const ALLOWED_ACTIONS = ['warn', 'block', 'dismiss'];
+  if (!action || !ALLOWED_ACTIONS.includes(action)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid action. Allowed values: ${ALLOWED_ACTIONS.join(', ')}`
+    });
+  }
+
   try {
     const [[complaint]] = await db.query(`SELECT * FROM complaints WHERE id = ?`, [complaintId]);
     if (!complaint) return res.status(404).json({ message: "Complaint not found" });

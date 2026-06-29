@@ -1,35 +1,45 @@
+const jwt = require("jsonwebtoken");
 const db = require("../config/db");
 
-// Checks if user is blocked before allowing access
-const checkBlocked = async (req, res, next) => {
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error("FATAL: JWT_SECRET environment variable is not set. Set it in your .env file.");
+  process.exit(1);
+}
+
+const authMiddleware = async (req, res, next) => {
   try {
-    // provider_id ya customer_id query, body, ya params se le lo
-    const userId =
-      req.query.provider_id ||
-      req.query.customer_id ||
-      req.body.provider_id ||
-      req.body.customer_id ||
-      req.params.id;
-
-    if (!userId) return next(); // agar id nahi mili, normal chalne do
-
-    const [[user]] = await db.query(
-      `SELECT is_blocked FROM users WHERE id = ?`, [userId]
-    );
-
-    if (user && user.is_blocked === 1) {
-      return res.status(403).json({
-        success: false,
-        message: "Your account has been blocked by admin.",
-        blocked: true,
-      });
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "Authentication required. No token provided." });
     }
 
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Check if user is blocked
+    const [[user]] = await db.query(
+      "SELECT id, role, is_blocked FROM users WHERE id = ? LIMIT 1",
+      [decoded.id]
+    );
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    if (user.is_blocked == 1) {
+      return res.status(403).json({ success: false, message: "Your account has been blocked" });
+    }
+
+    req.user = { id: user.id, role: user.role };
     next();
   } catch (err) {
-    console.error("checkBlocked error:", err.message);
-    next(); // error ho toh request block na karo, aage jaane do
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ success: false, message: "Token expired. Please log in again." });
+    }
+    return res.status(401).json({ success: false, message: "Invalid token" });
   }
 };
 
-module.exports = checkBlocked;
+module.exports = authMiddleware;

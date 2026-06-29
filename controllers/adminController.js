@@ -27,10 +27,13 @@ exports.getDashboardStats = async (req, res) => {
       `SELECT COUNT(*) AS securityDeposits 
        FROM provider_profiles WHERE security_deposit_status = 'verified'`);
 
-    // Security deposit amount (agar amount column hai to)
+    // Security deposit total amount (from app_settings.security_deposit_amount)
     const [[{ securityAmount }]] = await db.query(
-      `SELECT COALESCE(SUM(500), 0) AS securityAmount 
-       FROM provider_profiles WHERE security_deposit_status = 'verified'`).catch(() => [[{ securityAmount: 0 }]]);
+      `SELECT COALESCE(
+         (SELECT security_deposit_amount FROM app_settings LIMIT 1), 500
+       ) * COUNT(*) AS securityAmount 
+       FROM provider_profiles WHERE security_deposit_status = 'verified'`
+    ).catch(() => [[{ securityAmount: 0 }]]);
 
     const totalEarnings = parseFloat(commissionEarned) + parseFloat(securityAmount || 0);
 

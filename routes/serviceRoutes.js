@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
+const { adminOnly } = require('../middleware/roleMiddleware');
 
 const {
   getServices,
@@ -14,12 +16,12 @@ router.get("/", getServices);
 
 router.get("/:id", getServiceById);
 
-router.post("/", createService);
+router.post("/", authMiddleware, adminOnly, createService);
 
-router.put("/:id", updateService);
+router.put("/:id", authMiddleware, adminOnly, updateService);
 
-router.patch("/:id/toggle", toggleService);
+router.patch("/:id/toggle", authMiddleware, adminOnly, toggleService);
 
-router.delete("/:id", deleteService);
+router.delete("/:id", authMiddleware, adminOnly, deleteService);
 
 module.exports = router;

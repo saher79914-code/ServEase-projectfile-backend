@@ -1,63 +1,99 @@
+require("dotenv").config();
+
+const path    = require("path");
 const express = require("express");
-const cors = require("cors");
+const cors    = require("cors");
 
-const app = express();
-const PORT = 3000;
+const app  = express();
+const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ── CORS ──
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL]
+  : ["http://localhost:3000", "http://serveease.sandbox.pk"];
+
 app.use(cors({
-  origin: "*",
+  origin: (origin, cb) => {
+    // Allow mobile apps (no origin header), whitelisted origins, and any local development origin
+    if (!origin || 
+        allowedOrigins.includes(origin) || 
+        origin.startsWith("http://localhost:") || 
+        origin.startsWith("http://127.0.0.1:")) {
+      return cb(null, true);
+    }
+    cb(new Error("Not allowed by CORS"));
+  },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Auth Routes (OTP + Forgot/Reset Password) ──
+// Disable caching for API routes to prevent 304 Not Modified responses
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
+
+// ── Static files ──
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// ── Auth & Register (PUBLIC) ──
 app.use("/api/auth", require("./routes/authRoutes"));
-
-// ── Register & Login ──
-app.use("/", require("./routes/registerRoutes"));
 app.use("/api/auth", require("./routes/registerRoutes"));
+app.use("/",         require("./routes/authRoutes"));
+app.use("/",         require("./routes/registerRoutes"));
 
-// ── Services ──
-app.use("/services", require("./routes/serviceRoutes"));
+
+// ── Services (GET public, write protected inside route) ──
 app.use("/api/services", require("./routes/serviceRoutes"));
 
-// ── Admin — specific routes PEHLE, generic baad mein ──
-app.use("/api/admin/settings",         require("./routes/adminSettingsRoutes"));
-app.use("/api/admin/service-requests", require("./routes/serviceRequestRoutes"));
-app.use("/api/admin/users",            require("./routes/userRoutes"));
-app.use("/api/admin/complaints",       require("./routes/complaintRoutes"));
-app.use("/api/admin/notifications",    require("./routes/notificationRoutes"));
-app.use("/api/admin/services",         require("./routes/serviceRoutes"));
-app.use("/api/admin/providers",        require("./routes/providerRoutes"));
-app.use("/api/admin/commissions",      require("./routes/admincommissionroutes"));
-app.use("/api/admin/bookings",         require("./routes/adminbookingsroutes"));
-app.use("/api/admin",                  require("./routes/adminRoutes"));
-app.use("/api/admin",                  require("./routes/adminProfileRoutes"));
-app.use("/api/admin",                  require("./routes/adminSecurityRoutes"));
-app.use("/api/admin",                  require("./routes/complaintRoutes"));
+// ── Admin (protected inside each route file) ──
+app.use("/api/admin/settings",          require("./routes/adminSettingsRoutes"));
+app.use("/api/admin/service-requests",  require("./routes/serviceRequestRoutes"));
+app.use("/api/admin/users",             require("./routes/userRoutes"));
+app.use("/api/users",                   require("./routes/userRoutes"));
+app.use("/api/admin",                   require("./routes/complaintRoutes"));
 
-// ── Service Requests (provider registration ke waqt) ──
-app.use("/api/service-requests", require("./routes/serviceRequestRoutes"));
+app.use("/api/admin/notifications",     require("./routes/notificationRoutes"));
+app.use("/api/admin/services",          require("./routes/serviceRoutes"));
+app.use("/api/admin/providers",         require("./routes/providerRoutes"));
+app.use("/api/admin",                   require("./routes/providerRoutes"));
+app.use("/api/provider",                require("./routes/providerRoutes"));
+app.use("/api/admin/commissions",       require("./routes/admincommissionroutes"));
+app.use("/api/admin",                   require("./routes/adminSecurityRoutes"));
+app.use("/api/admin/bookings",          require("./routes/adminbookingsroutes"));
+
+
+
+app.use("/api/admin",                   require("./routes/adminRoutes"));
+app.use("/api/admin",                   require("./routes/adminProfileRoutes"));
 
 // ── Provider ──
-app.use("/api/provider",   require("./routes/registerRoutes"));
-app.use("/api/provider",   require("./routes/providerRoutes"));
 app.use("/api/providerside", require("./routes/provider/dashboardRoutes"));
 
 // ── Customer ──
 app.use("/api/customer", require("./routes/customer/customerRoutes"));
 
-// ── Users ──
-app.use("/api/users", require("./routes/userRoutes"));
+// ── 404 handler ──
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: "Route not found" });
+});
 
-// ── Static uploads ──
-app.use("/uploads", express.static("uploads"));
+// ── Global error handler ──
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err.message);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal server error",
+  });
+});
 
-// ── Server ──
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 ServEase server running on port ${PORT}`);
 });

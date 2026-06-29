@@ -55,7 +55,7 @@ const registerCustomer = async (req, res) => {
     try {
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'New Customer Registered',
+         SELECT id, 'admin', 'New Customer Registered',
                 CONCAT('New customer signed up: ', ?), 'admin', 0
          FROM users WHERE role = 'admin' LIMIT 1`,
         [full_name]
@@ -144,7 +144,7 @@ const registerProvider = async (req, res) => {
     try {
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'New Provider Registered',
+         SELECT id, 'admin', 'New Provider Registered',
                 CONCAT('New provider registered: ', ?, ' — Service: ', ?), 'admin', 0
          FROM users WHERE role = 'admin' LIMIT 1`,
         [full_name, service_name]
@@ -169,7 +169,8 @@ const registerAdmin = async (req, res) => {
   try {
     const { full_name, email, password, master_key } = req.body;
 
-    if (!master_key || master_key !== "servease123")
+    const ADMIN_MASTER_KEY = process.env.ADMIN_MASTER_KEY || "servease123";
+    if (!master_key || master_key !== ADMIN_MASTER_KEY)
       return res.status(403).json({ success: false, message: "Forbidden: invalid master key" });
 
     if (!full_name || !email || !password)

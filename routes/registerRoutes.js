@@ -1,5 +1,5 @@
-const express = require("express");
-const router = express.Router();
+const express      = require("express");
+const router       = express.Router();
 const {
   registerCustomer,
   registerProvider,
@@ -9,23 +9,7 @@ const {
 } = require("../controllers/registercontroller");
 
 const { cnicUpload } = require("../middleware/uploads");
-
-const jwt = require("jsonwebtoken");
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
-
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ success: false, message: "No token provided" });
-  }
-  try {
-    const token = authHeader.split(" ")[1];
-    req.user = jwt.verify(token, JWT_SECRET);
-    next();
-  } catch (err) {
-    return res.status(401).json({ success: false, message: "Invalid or expired token" });
-  }
-};
+const authMiddleware = require("../middleware/authMiddleware");
 
 router.post("/register/customer", registerCustomer);
 

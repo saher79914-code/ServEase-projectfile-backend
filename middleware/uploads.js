@@ -1,49 +1,60 @@
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const path   = require("path");
+const fs     = require("fs");
 
-const uploadDir = path.join(__dirname, "..", "uploads", "profile");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// ── Allowed MIME types ──────────────────────────────────────────────
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
+const imageFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only JPEG, PNG and WEBP images are allowed"), false);
+  }
+};
+
+// ── Helper: create storage ──────────────────────────────────────────
+const makeStorage = (subfolder) => {
+  const dir = path.join(__dirname, "..", "uploads", subfolder);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return multer.diskStorage({
+    destination: (req, file, cb) => cb(null, dir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    },
+  });
+};
+
+// ── Profile image uploader ──────────────────────────────────────────
+const upload = multer({
+  storage: makeStorage("profile"),
+  fileFilter: imageFilter,
+  limits: { fileSize: MAX_FILE_SIZE },
 });
 
-const upload = multer({ storage });
-
-module.exports = upload;
-
-// ── CNIC uploader (separate folder) ──
-const cnicDir = path.join(__dirname, "..", "uploads", "cnic");
-if (!fs.existsSync(cnicDir)) fs.mkdirSync(cnicDir, { recursive: true });
-
-const cnicStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, cnicDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
+// ── CNIC uploader ───────────────────────────────────────────────────
+const cnicUpload = multer({
+  storage: makeStorage("cnic"),
+  fileFilter: imageFilter,
+  limits: { fileSize: MAX_FILE_SIZE },
 });
 
-module.exports.cnicUpload = multer({ storage: cnicStorage });
-
-// ── Security deposit uploader ──
-const securityDir = path.join(__dirname, "..", "uploads", "security");
-if (!fs.existsSync(securityDir)) fs.mkdirSync(securityDir, { recursive: true });
-
-const securityStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, securityDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  },
+// ── Security deposit uploader ───────────────────────────────────────
+const securityUpload = multer({
+  storage: makeStorage("security"),
+  fileFilter: imageFilter,
+  limits: { fileSize: MAX_FILE_SIZE },
 });
 
-module.exports.securityUpload = multer({ storage: securityStorage });
+// ── Commission screenshot uploader ─────────────────────────────────
+const commissionUpload = multer({
+  storage: makeStorage("commission"),
+  fileFilter: imageFilter,
+  limits: { fileSize: MAX_FILE_SIZE },
+});
+
+module.exports = { upload, cnicUpload, securityUpload, commissionUpload };

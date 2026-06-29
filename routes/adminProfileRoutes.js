@@ -1,8 +1,13 @@
 const express = require("express");
 
 const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
+const { adminOnly } = require("../middleware/roleMiddleware");
 
-const upload = require("../middleware/uploads");
+router.use(authMiddleware);
+router.use(adminOnly);
+
+const { upload } = require("../middleware/uploads");
 
 const {
   getProfile,

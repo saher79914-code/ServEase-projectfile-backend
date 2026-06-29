@@ -7,7 +7,7 @@ exports.getProfile = async (req, res) => {
       `SELECT u.full_name, u.phone, u.email, u.address, u.profile_image,
               p.bio, p.years_of_experience, p.approval_status, p.rating,
               COALESCE(s.name, 'N/A') AS service_name, 
-              COALESCE(s.price, 0)   AS hourly_rate,
+              COALESCE(p.hourly_rate, 0)   AS hourly_rate,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
        FROM provider_profiles p
        JOIN users u       ON u.id = p.user_id

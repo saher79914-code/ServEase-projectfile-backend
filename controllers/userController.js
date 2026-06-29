@@ -4,7 +4,6 @@ const bcrypt = require("bcryptjs");
 // GET ALL USERS
 exports.getAllUsers = async (req, res) => {
   try {
-
     const [users] = await db.query(`
       SELECT
       id,
@@ -15,6 +14,7 @@ exports.getAllUsers = async (req, res) => {
       address,
       role,
       is_blocked,
+      profile_image,
       created_at
       FROM users
       WHERE is_blocked = 0
@@ -35,15 +35,17 @@ exports.getAllUsers = async (req, res) => {
 // GET BLOCKED USERS
 exports.getBlockedUsers = async (req, res) => {
   try {
-
     const [users] = await db.query(`
       SELECT
       id,
       full_name,
       email,
       phone,
+      cnic,
+      address,
       role,
       is_blocked,
+      profile_image,
       created_at
       FROM users
       WHERE is_blocked = 1
@@ -63,38 +65,50 @@ exports.getBlockedUsers = async (req, res) => {
 
 // GET USER BY ID
 exports.getUserById = async (req, res) => {
-
   try {
-
     const id = req.params.id;
 
     const [user] = await db.query(`
       SELECT
-      id,
-      full_name,
-      email,
-      phone,
-      role,
-      is_blocked,
-      created_at
-      FROM users
-      WHERE id = ?
-    `,[id]);
+        u.id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.cnic,
+        u.address,
+        u.role,
+        u.is_blocked,
+        u.profile_image,
+        u.created_at,
+        p.years_of_experience,
+        p.bio,
+        p.cnic_front_image,
+        p.cnic_back_image,
+        p.approval_status,
+        p.rating,
+        p.hourly_rate,
+        p.security_deposit_status,
+        p.security_deposit_screenshot,
+        p.security_deposit_method,
+        p.pending_commission,
+        p.commission_rate
+      FROM users u
+      LEFT JOIN provider_profiles p ON u.id = p.user_id
+      WHERE u.id = ?
+    `, [id]);
 
-    if(user.length === 0){
+    if (user.length === 0) {
       return res.status(404).json({
-        message:"User not found"
+        message: "User not found"
       });
     }
 
     res.status(200).json(user[0]);
 
-  } catch(error){
-
+  } catch (error) {
     console.log(error);
-
     res.status(500).json({
-      message:"Server Error"
+      message: "Server Error"
     });
   }
 };

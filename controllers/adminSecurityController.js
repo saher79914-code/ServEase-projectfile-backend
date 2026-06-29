@@ -25,8 +25,8 @@ exports.verifyDeposit = async (req, res) => {
       `UPDATE provider_profiles SET security_deposit_status = 'verified' WHERE user_id = ?`, [pid]);
     try {
       await db.query(
-        `INSERT INTO notifications (user_id, title, message, type, is_read)
-         VALUES (?, 'Security Deposit Verified', 'Your security deposit has been verified. You can now accept jobs!', 'admin', 0)`,
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, 'provider', 'Security Deposit Verified', 'Your security deposit has been verified. You can now accept jobs!', 'admin', 0)`,
         [pid]);
     } catch (e) { console.error('Notif error:', e.message); }
     res.json({ success: true, message: "Verified" });
@@ -41,10 +41,10 @@ exports.rejectDeposit = async (req, res) => {
       `UPDATE provider_profiles SET security_deposit_status = 'rejected' WHERE user_id = ?`, [pid]);
     try {
       await db.query(
-        `INSERT INTO notifications (user_id, title, message, type, is_read)
-         VALUES (?, 'Security Deposit Rejected', 'Your security deposit proof was rejected. Please resubmit.', 'admin', 0)`,
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, 'provider', 'Security Deposit Rejected', 'Your security deposit proof was rejected. Please resubmit.', 'admin', 0)`,
         [pid]);
     } catch (e) { console.error('Notif error:', e.message); }
     res.json({ success: true, message: "Rejected" });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-};
+};

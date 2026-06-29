@@ -1,5 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const authMiddleware = require("../middleware/authMiddleware");
+const { adminOnly } = require('../middleware/roleMiddleware');
+
+router.use(authMiddleware);
+router.use(adminOnly);
 
 const {
     getPendingProviders,

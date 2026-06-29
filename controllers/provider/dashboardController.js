@@ -2,7 +2,7 @@ const db = require("../../config/db");
 
 // DASHBOARD STATS
 exports.getDashboardStats = async (req, res) => {
-  const { provider_id } = req.query;
+  const provider_id = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     const [[provider]] = await db.query(
       `SELECT u.full_name, p.rating, p.commission_rate, p.pending_commission
@@ -36,7 +36,7 @@ exports.getDashboardStats = async (req, res) => {
 
 // NEW JOBS (pending)
 exports.getNewJobs = async (req, res) => {
-  const { provider_id } = req.query;
+  const provider_id = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     const [rows] = await db.query(
       `SELECT b.id, u.full_name AS customer_name, u.phone AS customer_phone,
@@ -53,7 +53,7 @@ exports.getNewJobs = async (req, res) => {
 
 // ALL JOBS
 exports.getAllJobs = async (req, res) => {
-  const { provider_id } = req.query;
+  const provider_id = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     const [rows] = await db.query(
       `SELECT b.id, u.full_name AS customer_name, u.phone AS customer_phone,
@@ -71,14 +71,20 @@ exports.getAllJobs = async (req, res) => {
 // ACCEPT JOB
 exports.acceptJob = async (req, res) => {
   const jobId = req.params.id;
+  const providerId = req.user.id;
   try {
     const [[booking]] = await db.query(
       `SELECT provider_id, customer_id FROM bookings WHERE id = ?`, [jobId]);
     if (!booking) return res.status(404).json({ message: "Job not found" });
 
+    // Ownership check — only the assigned provider can accept
+    if (booking.provider_id !== providerId) {
+      return res.status(403).json({ message: "Forbidden: This job is not assigned to you" });
+    }
+
     const [[profile]] = await db.query(
       `SELECT pending_commission, security_deposit_status FROM provider_profiles WHERE user_id = ?`,
-      [booking.provider_id]);
+      [providerId]);
 
     // Security deposit check
     if (profile && profile.security_deposit_status !== 'verified') {
@@ -112,21 +118,26 @@ exports.acceptJob = async (req, res) => {
 
 // DECLINE JOB
 exports.declineJob = async (req, res) => {
+  const providerId = req.user.id;
   try {
+    // Fetch booking FIRST (before update) to verify ownership
+    const [[booking]] = await db.query(
+      `SELECT customer_id, provider_id FROM bookings WHERE id = ?`, [req.params.id]);
+    if (!booking) return res.status(404).json({ message: "Job not found" });
+
+    if (booking.provider_id !== providerId) {
+      return res.status(403).json({ message: "Forbidden: This job is not assigned to you" });
+    }
+
     await db.query(
       `UPDATE bookings SET status = 'declined' WHERE id = ?`, [req.params.id]);
 
-    const [[booking]] = await db.query(
-      `SELECT customer_id FROM bookings WHERE id = ?`, [req.params.id]);
-
-    if (booking) {
-      try {
-        await db.query(
-          `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-           VALUES (?, 'customer', 'Booking Declined', 'Unfortunately your booking was declined by the provider.', 'booking', 0)`,
-          [booking.customer_id]);
-      } catch (e) { console.error('Notif error:', e.message); }
-    }
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, 'customer', 'Booking Declined', 'Unfortunately your booking was declined by the provider.', 'booking', 0)`,
+        [booking.customer_id]);
+    } catch (e) { console.error('Notif error:', e.message); }
 
     res.json({ message: "Job declined" });
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -136,10 +147,22 @@ exports.declineJob = async (req, res) => {
 exports.updateJobStatus = async (req, res) => {
   const { status } = req.body;
   const bookingId = parseInt(req.params.id);
+  const providerId = req.user.id;
+
+  const ALLOWED_STATUSES = ['accepted', 'on_the_way', 'in_progress', 'completed'];
+  if (!status || !ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ message: `Invalid status. Allowed: ${ALLOWED_STATUSES.join(', ')}` });
+  }
+
   try {
     const [[booking]] = await db.query(
       `SELECT customer_id, provider_id, total_price FROM bookings WHERE id = ?`, [bookingId]);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    // Ownership check
+    if (booking.provider_id !== providerId) {
+      return res.status(403).json({ message: "Forbidden: This booking is not assigned to you" });
+    }
 
     await db.query(
       `UPDATE bookings SET status = ? WHERE id = ?`, [status, bookingId]);
@@ -200,7 +223,8 @@ exports.updateJobStatus = async (req, res) => {
 
 // SUBMIT COMMISSION
 exports.submitCommission = async (req, res) => {
-  const { provider_id, amount, payment_method } = req.body;
+  const provider_id = req.user ? req.user.id : parseInt(req.body.provider_id);
+  const { amount, payment_method } = req.body;
   const screenshot = req.file?.filename ?? null;
   try {
     await db.query(
@@ -208,9 +232,8 @@ exports.submitCommission = async (req, res) => {
        VALUES (?, ?, ?, ?, 'pending', NOW())`,
       [provider_id, amount, payment_method, screenshot]);
 
-    await db.query(
-      `UPDATE provider_profiles SET pending_commission = 0 WHERE user_id = ?`,
-      [provider_id]);
+    // NOTE: Do NOT zero pending_commission here — only zero after admin VERIFIES the payment
+    // pending_commission is reduced in admincommissionController.verifyCommission
 
     // Admin ko notify karo
     try {
@@ -219,7 +242,7 @@ exports.submitCommission = async (req, res) => {
 
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'Commission Submitted',
+         SELECT id, 'admin', 'Commission Submitted',
                 CONCAT('Provider ', ?, ' ne RS ', ?, ' commission submit ki'), 'admin', 0
          FROM users WHERE role = 'admin' LIMIT 1`,
         [provider?.full_name ?? 'Unknown', amount]);
@@ -231,8 +254,7 @@ exports.submitCommission = async (req, res) => {
 
 // GET EARNINGS
 exports.getEarnings = async (req, res) => {
-  const { provider_id } = req.query;
-  const pid = parseInt(provider_id);
+  const pid = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     const [[{ total_earned }]] = await db.query(
       `SELECT COALESCE(SUM(total_price), 0) AS total_earned 
@@ -277,7 +299,7 @@ exports.getEarnings = async (req, res) => {
 
 // GET NOTIFICATIONS
 exports.getNotifications = async (req, res) => {
-  const pid = parseInt(req.query.provider_id);
+  const pid = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     const [rows] = await db.query(
       `SELECT id, title, message, type, is_read,
@@ -300,7 +322,7 @@ exports.markNotificationRead = async (req, res) => {
 };
 // CLEAR ALL NOTIFICATIONS (Provider)
 exports.clearNotifications = async (req, res) => {
-  const pid = parseInt(req.query.provider_id);
+  const pid = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     await db.query(
       `DELETE FROM notifications WHERE user_id = ? AND role = 'provider'`,
@@ -311,7 +333,8 @@ exports.clearNotifications = async (req, res) => {
 };
 // POST submit complaint (provider against customer)
 exports.submitComplaint = async (req, res) => {
-  const { provider_id, booking_id, title, message } = req.body;
+  const provider_id = req.user ? req.user.id : parseInt(req.body.provider_id);
+  const { booking_id, title, message } = req.body;
   try {
     const [[booking]] = await db.query(
       `SELECT customer_id FROM bookings WHERE id = ?`, [booking_id]);
@@ -335,7 +358,7 @@ exports.submitComplaint = async (req, res) => {
 };
 // SUBMIT SECURITY DEPOSIT
 exports.submitSecurityDeposit = async (req, res) => {
-  const pid = parseInt(req.body.provider_id);
+  const pid = req.user ? req.user.id : parseInt(req.body.provider_id);
   const method = req.body.payment_method;
   const screenshot = req.file?.filename ?? null;
 
@@ -363,7 +386,7 @@ exports.submitSecurityDeposit = async (req, res) => {
 
 // GET SECURITY DEPOSIT STATUS
 exports.getSecurityDepositStatus = async (req, res) => {
-  const pid = parseInt(req.query.provider_id);
+  const pid = req.user ? req.user.id : parseInt(req.query.provider_id);
   try {
     const [[row]] = await db.query(
       `SELECT security_deposit_status FROM provider_profiles WHERE user_id = ?`, [pid]);

@@ -15,11 +15,29 @@ exports.getAllCommissions = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// PUT verify
+// PUT verify — also clears pending_commission from provider profile
 exports.verifyCommission = async (req, res) => {
   try {
+    const [[payment]] = await db.query(
+      `SELECT provider_id FROM commission_payments WHERE id = ?`, [req.params.id]);
+    if (!payment) return res.status(404).json({ message: "Commission payment not found" });
+
     await db.query(
       `UPDATE commission_payments SET status = 'verified' WHERE id = ?`, [req.params.id]);
+
+    // Now it's safe to clear pending commission — admin has confirmed the payment
+    await db.query(
+      `UPDATE provider_profiles SET pending_commission = 0 WHERE user_id = ?`,
+      [payment.provider_id]);
+
+    // Notify provider
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, 'provider', 'Commission Verified', 'Your commission payment has been verified by admin. You can now accept new jobs.', 'admin', 0)`,
+        [payment.provider_id]);
+    } catch (e) { console.error('Notif error:', e.message); }
+
     res.json({ message: "Commission verified" });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };

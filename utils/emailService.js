@@ -57,4 +57,46 @@ const sendResetEmail = async (toEmail, fullName, resetToken, role) => {
   await transporter.sendMail(mailOptions);
 };
 
-module.exports = { sendOtpEmail, sendResetEmail };
+// Service Request Approval Email
+const sendApprovalEmail = async (toEmail, fullName, serviceName) => {
+  const mailOptions = {
+    from: `"ServEase" <${process.env.GMAIL_USER || "adminservease@gmail.com"}>`,
+    to: toEmail,
+    subject: "ServEase — Service Request Approved! 🎉",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:30px;border:1px solid #EDD9C8;border-radius:12px;background:#FFF8EF;">
+        <h2 style="color:#E8845A;text-align:center;">ServEase</h2>
+        <p style="color:#2D2A24;">Hi <strong>${fullName}</strong>,</p>
+        <p style="color:#2D2A24;">Great news! Your request to add the service <strong>"${serviceName}"</strong> has been reviewed and <strong>APPROVED</strong> by the admin. This service is now active on the platform.</p>
+        <p style="color:#2D2A24;">You can now accept jobs and offer this service to customers.</p>
+        <hr style="border-color:#EDD9C8; margin: 20px 0;">
+        <p style="color:#9A8878;font-size:11px;text-align:center;">© ServEase — Pakistan Home Services</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+};
+
+// Service Request Rejection Email
+const sendRejectionEmail = async (toEmail, fullName, serviceName, adminNote) => {
+  const mailOptions = {
+    from: `"ServEase" <${process.env.GMAIL_USER || "adminservease@gmail.com"}>`,
+    to: toEmail,
+    subject: "ServEase — Service Request Update",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:30px;border:1px solid #EDD9C8;border-radius:12px;background:#FFF8EF;">
+        <h2 style="color:#E8845A;text-align:center;">ServEase</h2>
+        <p style="color:#2D2A24;">Hi <strong>${fullName}</strong>,</p>
+        <p style="color:#2D2A24;">Your request to add the service <strong>"${serviceName}"</strong> has been reviewed.</p>
+        <p style="color:#2D2A24;color:#D9534F;"><strong>Status: Rejected</strong></p>
+        ${adminNote ? `<p style="color:#2D2A24;"><strong>Reason/Note from Admin:</strong> ${adminNote}</p>` : ''}
+        <p style="color:#2D2A24;">If you have any questions, please reply to this email or contact support.</p>
+        <hr style="border-color:#EDD9C8; margin: 20px 0;">
+        <p style="color:#9A8878;font-size:11px;text-align:center;">© ServEase — Pakistan Home Services</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+};
+
+module.exports = { sendOtpEmail, sendResetEmail, sendApprovalEmail, sendRejectionEmail };

@@ -2,7 +2,7 @@ const db = require("../../config/db");
 
 // GET home data
 exports.getHomeData = async (req, res) => {
-  const userId = parseInt(req.query.user_id);
+  const userId = req.user ? req.user.id : parseInt(req.query.user_id);
   try {
     const [[customer]] = await db.query(
       `SELECT full_name, address AS city FROM users WHERE id = ?`, [userId]);
@@ -12,7 +12,7 @@ exports.getHomeData = async (req, res) => {
 
     const [providers] = await db.query(
       `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
-              p.rating, s.price AS rate, p.approval_status,
+              p.rating, p.hourly_rate AS rate, p.approval_status,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done,
               (CASE WHEN p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS is_new
        FROM provider_profiles p
@@ -46,7 +46,7 @@ exports.getProviders = async (req, res) => {
   try {
     let query = `
       SELECT u.id, u.full_name AS name, s.name AS service, s.category,
-             p.rating, s.price AS rate, p.approval_status,
+             p.rating, p.hourly_rate AS rate, p.approval_status,
              (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done,
              (CASE WHEN p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS is_new
       FROM provider_profiles p
@@ -83,7 +83,7 @@ exports.getProviderDetail = async (req, res) => {
   try {
     const [[provider]] = await db.query(
       `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
-              p.rating, s.price AS rate, p.approval_status,
+              p.rating, p.hourly_rate AS rate, p.approval_status,
               u.address AS location, p.bio,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
        FROM provider_profiles p
@@ -116,7 +116,8 @@ exports.getProviderDetail = async (req, res) => {
 
 // POST create booking
 exports.createBooking = async (req, res) => {
-  const { customer_id, provider_id, service_id, scheduled_date, scheduled_time, location, total_price } = req.body;
+  const customer_id = req.user ? req.user.id : parseInt(req.body.customer_id);
+  const { provider_id, service_id, scheduled_date, scheduled_time, location, total_price } = req.body;
   try {
     const [[profile]] = await db.query(
       `SELECT service_id FROM provider_profiles WHERE user_id = ?`, [provider_id]);
@@ -147,7 +148,7 @@ exports.createBooking = async (req, res) => {
 
 // GET customer bookings
 exports.getMyBookings = async (req, res) => {
-  const customerId = parseInt(req.query.customer_id);
+  const customerId = req.user ? req.user.id : parseInt(req.query.customer_id);
   try {
     const [rows] = await db.query(
       `SELECT b.id, b.provider_id, u.full_name AS provider_name, s.name AS service_name,
@@ -163,10 +164,10 @@ exports.getMyBookings = async (req, res) => {
 
 // GET customer profile
 exports.getProfile = async (req, res) => {
-  const userId = parseInt(req.query.user_id);
+  const userId = req.user ? req.user.id : parseInt(req.query.user_id);
   try {
     const [[user]] = await db.query(
-      `SELECT u.full_name, u.email, u.phone, u.address,
+      `SELECT u.full_name, u.email, u.phone, u.address, u.profile_image,
               DATE_FORMAT(u.created_at, '%Y') AS member_since,
               (SELECT COUNT(*) FROM bookings WHERE customer_id = u.id) AS total_bookings,
               (SELECT COUNT(*) FROM bookings WHERE customer_id = u.id AND status IN ('pending','accepted','in_progress')) AS active_bookings
@@ -178,19 +179,29 @@ exports.getProfile = async (req, res) => {
 
 // PUT update profile
 exports.updateProfile = async (req, res) => {
-  const userId = parseInt(req.query.user_id);
+  const userId = req.user ? req.user.id : parseInt(req.query.user_id);
   const { full_name, phone, address } = req.body;
+  let profile_image = req.body.profile_image;
+  if (req.file) {
+    profile_image = `/uploads/profile/${req.file.filename}`;
+  }
   try {
-    await db.query(
-      `UPDATE users SET full_name = ?, phone = ?, address = ? WHERE id = ?`,
-      [full_name, phone, address, userId]);
-    res.json({ message: "Profile updated" });
+    if (profile_image) {
+      await db.query(
+        `UPDATE users SET full_name = ?, phone = ?, address = ?, profile_image = ? WHERE id = ?`,
+        [full_name, phone, address, profile_image, userId]);
+    } else {
+      await db.query(
+        `UPDATE users SET full_name = ?, phone = ?, address = ? WHERE id = ?`,
+        [full_name, phone, address, userId]);
+    }
+    res.json({ message: "Profile updated", profile_image });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
 // PUT change password
 exports.changePassword = async (req, res) => {
-  const userId = parseInt(req.query.user_id);
+  const userId = req.user ? req.user.id : parseInt(req.query.user_id);
   const { current_password, new_password } = req.body;
   const bcrypt = require("bcryptjs");
   try {
@@ -217,7 +228,7 @@ exports.forgotPassword = async (req, res) => {
 
 // GET notifications
 exports.getNotifications = async (req, res) => {
-  const customerId = parseInt(req.query.customer_id);
+  const customerId = req.user ? req.user.id : parseInt(req.query.customer_id);
   try {
     const [rows] = await db.query(
       `SELECT id, title, message, type, is_read, created_at
@@ -240,7 +251,7 @@ exports.markNotificationRead = async (req, res) => {
 };
 // CLEAR ALL NOTIFICATIONS (Customer)
 exports.clearNotifications = async (req, res) => {
-  const customerId = parseInt(req.query.customer_id);
+  const customerId = req.user ? req.user.id : parseInt(req.query.customer_id);
   try {
     await db.query(
       `DELETE FROM notifications WHERE user_id = ? AND role = 'customer'`,
@@ -251,7 +262,8 @@ exports.clearNotifications = async (req, res) => {
 };
 // POST submit complaint (customer against provider)
 exports.submitComplaint = async (req, res) => {
-  const { customer_id, booking_id, title, message } = req.body;
+  const customer_id = req.user ? req.user.id : parseInt(req.body.customer_id);
+  const { booking_id, title, message } = req.body;
   try {
     const [[booking]] = await db.query(
       `SELECT provider_id FROM bookings WHERE id = ?`, [booking_id]);
@@ -276,13 +288,20 @@ exports.submitComplaint = async (req, res) => {
 
 // POST submit rating
 exports.submitRating = async (req, res) => {
-  const { booking_id, customer_id, provider_id, rating, note } = req.body;
+  const customer_id = req.user ? req.user.id : parseInt(req.body.customer_id);
+  const { booking_id, provider_id, rating, note } = req.body;
+
+  const ratingNum = parseInt(rating);
+  if (!ratingNum || ratingNum < 1 || ratingNum > 5) {
+    return res.status(400).json({ message: "Rating must be between 1 and 5" });
+  }
+
   try {
     await db.query(
       `INSERT INTO ratings (booking_id, customer_id, provider_id, rating, note)
        VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE rating = ?, note = ?`,
-      [booking_id, customer_id, provider_id, rating, note || null, rating, note || null]);
+      [booking_id, customer_id, provider_id, ratingNum, note || null, ratingNum, note || null]);
 
     const [[avg]] = await db.query(
       `SELECT AVG(rating) AS avg_rating FROM ratings WHERE provider_id = ?`, [provider_id]);
