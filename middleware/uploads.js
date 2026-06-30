@@ -3,12 +3,12 @@ const path   = require("path");
 const fs     = require("fs");
 
 // ── Allowed MIME types ──────────────────────────────────────────────
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/octet-stream"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 const imageFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ""];
   if (ALLOWED_MIME_TYPES.includes(file.mimetype) || allowedExtensions.includes(ext)) {
     cb(null, true);
   } else {

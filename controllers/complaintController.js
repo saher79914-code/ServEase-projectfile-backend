@@ -43,6 +43,12 @@ exports.takeAction = async (req, res) => {
         [admin_response || 'You have received a complaint. Please follow platform guidelines.', complaint.against_user_id]);
 
       await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, ?, 'Complaint Update', ?, 'complaint', 0)`,
+        [complaint.user_id, complaint.complainant_role, `Your complaint (ID: #${complaintId}) has been resolved. A warning has been issued.`]
+      );
+
+      await db.query(
         `UPDATE complaints SET status = 'warned', admin_response = ? WHERE id = ?`,
         [admin_response || 'Warning issued', complaintId]);
     }
@@ -58,11 +64,23 @@ exports.takeAction = async (req, res) => {
         [admin_response || 'Your account has been blocked due to repeated complaints.', complaint.against_user_id]);
 
       await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, ?, 'Complaint Update', ?, 'complaint', 0)`,
+        [complaint.user_id, complaint.complainant_role, `Your complaint (ID: #${complaintId}) has been resolved. The user has been blocked.`]
+      );
+
+      await db.query(
         `UPDATE complaints SET status = 'blocked', admin_response = ? WHERE id = ?`,
         [admin_response || 'User blocked', complaintId]);
     }
 
     if (action === 'dismiss') {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, ?, 'Complaint Update', ?, 'complaint', 0)`,
+        [complaint.user_id, complaint.complainant_role, `Your complaint (ID: #${complaintId}) has been reviewed and dismissed.`]
+      );
+
       await db.query(
         `UPDATE complaints SET status = 'dismissed', admin_response = ? WHERE id = ?`,
         [admin_response || 'No action needed', complaintId]);

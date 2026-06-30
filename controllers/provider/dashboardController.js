@@ -62,7 +62,7 @@ exports.getAllJobs = async (req, res) => {
        FROM bookings b
        JOIN users u ON u.id = b.customer_id
        JOIN services s ON s.id = b.service_id
-       WHERE b.provider_id = ?
+       WHERE b.provider_id = ? AND b.status != 'pending'
        ORDER BY b.created_at DESC`, [provider_id]);
     res.json(rows);
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -374,8 +374,8 @@ exports.submitSecurityDeposit = async (req, res) => {
     try {
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'Security Deposit Submitted',
-                CONCAT('Provider #', ?, ' submitted RS 500 security deposit proof'), 'admin', 0
+         SELECT id, 'admin', 'Security Deposit Submitted',
+                CONCAT('Provider #', ?, ' submitted security deposit proof'), 'admin', 0
          FROM users WHERE role = 'admin' LIMIT 1`,
         [pid]);
     } catch (e) { console.error('Notif error:', e.message); }
@@ -390,6 +390,21 @@ exports.getSecurityDepositStatus = async (req, res) => {
   try {
     const [[row]] = await db.query(
       `SELECT security_deposit_status FROM provider_profiles WHERE user_id = ?`, [pid]);
-    res.json({ status: row?.security_deposit_status ?? 'pending' });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+    
+    // Fetch dynamic amount from app_settings
+    const [[settings]] = await db.query(
+      `SELECT security_deposit_amount, security_deposit_required FROM app_settings LIMIT 1`
+    );
+    
+    const requiredAmount = settings ? settings.security_deposit_amount : 500;
+    const isRequired = settings ? settings.security_deposit_required : 1;
+
+    res.json({
+      status: row?.security_deposit_status ?? 'pending',
+      amount: requiredAmount,
+      required: isRequired
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };

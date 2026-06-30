@@ -22,6 +22,11 @@ exports.getDashboardStats = async (req, res) => {
       `SELECT COALESCE(SUM(amount), 0) AS commissionEarned 
        FROM commission_payments WHERE status = 'verified'`);
 
+    const [[settings]] = await db.query(
+      `SELECT commission_rate FROM app_settings LIMIT 1`
+    );
+    const commissionRate = settings ? parseFloat(settings.commission_rate) : 10.00;
+
     // Security deposits
     const [[{ securityDeposits }]] = await db.query(
       `SELECT COUNT(*) AS securityDeposits 
@@ -42,6 +47,7 @@ exports.getDashboardStats = async (req, res) => {
       totalServices, totalBookings, openComplaints,
       pendingProviders,
       commissionEarned:  parseFloat(commissionEarned),
+      commissionRate,
       securityDeposits:  parseInt(securityDeposits),
       securityAmount:    parseFloat(securityAmount || 0),
       totalEarnings,

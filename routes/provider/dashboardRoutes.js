@@ -1,7 +1,7 @@
 const router  = require("express").Router();
 const ctrl    = require("../../controllers/provider/dashboardController");
 const authMiddleware = require("../../middleware/authMiddleware");
-const { securityUpload, commissionUpload } = require("../../middleware/uploads");
+const { securityUpload, commissionUpload, upload } = require("../../middleware/uploads");
 
 const profileCtrl = require("../../controllers/provider/providerProfileController");
 
@@ -20,7 +20,9 @@ router.get ("/earnings",              ctrl.getEarnings);
 router.post("/complaints",            ctrl.submitComplaint);
 
 router.get ("/profile",              profileCtrl.getProfile);
-router.put ("/profile",              profileCtrl.updateProfile);
+router.put ("/profile",              upload.single("profile_image"), profileCtrl.updateProfile);
+router.get ("/profile/reviews",      profileCtrl.getReviews);
+router.put ("/profile/change-password", profileCtrl.changePassword);
 router.get ("/notifications",        ctrl.getNotifications);
 router.put ("/notifications/:id/read", ctrl.markNotificationRead);
 router.delete("/notifications/clear", ctrl.clearNotifications);
