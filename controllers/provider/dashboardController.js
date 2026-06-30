@@ -240,7 +240,6 @@ exports.getEarnings = async (req, res) => {
 
     const [[provider]] = await db.query(
       `SELECT pending_commission FROM provider_profiles WHERE user_id = ?`, [pid]);
-
     const [monthly] = await db.query(
       `SELECT DATE_FORMAT(created_at, '%b') AS month,
               COALESCE(SUM(total_price), 0) AS amount
