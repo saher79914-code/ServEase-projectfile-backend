@@ -3,9 +3,9 @@ const mysql = require("mysql2/promise");
 
 const db = mysql.createPool({
   host:     process.env.DB_HOST     || "localhost",
-  user:     process.env.DB_USER     || "root",
-  password: process.env.DB_PASS     || "",
-  database: process.env.DB_NAME     || "auth_db",
+  user:     process.env.DB_USER     || "admin",
+  password: process.env.DB_PASS     || "YourStrongPassword",
+  database: process.env.DB_NAME     || "serve_ease",
   waitForConnections: true,
   connectionLimit: 10,
 });

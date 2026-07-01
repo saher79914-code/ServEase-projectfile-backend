@@ -131,8 +131,8 @@ const resetPassword = async (req, res) => {
     if (!token || !new_password)
       return res.status(400).json({ success: false, message: "Token and new password required" });
 
-    if (new_password.length < 6)
-      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    if (new_password.length < 8)
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters" });
 
     const [rows] = await db.query(
       "SELECT * FROM password_resets WHERE token = ? LIMIT 1",

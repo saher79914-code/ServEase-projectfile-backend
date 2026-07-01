@@ -32,8 +32,8 @@ const registerCustomer = async (req, res) => {
     if (!/^\d{5}-\d{7}-\d{1}$/.test(cnic))
       return res.status(400).json({ success: false, message: "CNIC format: XXXXX-XXXXXXX-X" });
 
-    if (password.length < 6)
-      return res.status(400).json({ success: false, message: "Password min 6 characters" });
+    if (password.length < 8)
+      return res.status(400).json({ success: false, message: "Password min 8 characters" });
 
     const [byEmail] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
     if (byEmail.length > 0)
@@ -92,6 +92,12 @@ const registerProvider = async (req, res) => {
     // Validation
     if (!full_name || !email || !phone || !cnic || !address || !password || !service_name)
       return res.status(400).json({ success: false, message: "All fields are required" });
+
+    if (!/^[\w\-.]+@([\w\-]+\.)+[\w]{2,4}$/.test(email))
+      return res.status(400).json({ success: false, message: "Enter a valid email" });
+
+    if (password.length < 8)
+      return res.status(400).json({ success: false, message: "Password min 8 characters" });
 
     // CNIC images — req.files (multer.fields)
     const cnicFront = req.files?.cnic_front?.[0];

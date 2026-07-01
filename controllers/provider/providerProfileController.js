@@ -72,6 +72,9 @@ exports.changePassword = async (req, res) => {
   const db = require("../../config/db");
   const userId = req.user ? req.user.id : parseInt(req.body.provider_id);
   const { current_password, new_password } = req.body;
+  if (!new_password || new_password.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters" });
+  }
   const bcrypt = require("bcryptjs");
   try {
     const [[user]] = await db.query(`SELECT password FROM users WHERE id = ?`, [userId]);
