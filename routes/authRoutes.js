@@ -6,6 +6,8 @@ const {
   forgotPassword,
   resetPassword,
   verifyResetToken,
+  getPublicProviders,
+  getPublicProviderDetail,
 } = require("../controllers/authController");
 
 // OTP — Registration verification
@@ -16,6 +18,8 @@ router.post("/verify-otp", verifyOtp);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.get("/verify-reset-token", verifyResetToken);
+router.get("/public-providers", getPublicProviders);
+router.get("/public-provider/:id", getPublicProviderDetail);
 
 // Browser se aane wala reset link — seedha reset form dikhata hai
 router.get("/reset-redirect", (req, res) => {
@@ -65,7 +69,7 @@ router.get("/reset-redirect", (req, res) => {
         <div class="field-gap">
           <label>New Password</label>
           <div class="eye-wrap">
-            <input type="password" id="newPass" placeholder="Min 6 characters" />
+            <input type="password" id="newPass" placeholder="Min 8 characters" />
             <button class="eye-btn" onclick="toggle('newPass', this)">👁</button>
           </div>
         </div>
@@ -110,8 +114,8 @@ router.get("/reset-redirect", (req, res) => {
             msg.className = "msg error";
             return;
           }
-          if (newPass.length < 6) {
-            msg.textContent = "Password must be at least 6 characters";
+          if (newPass.length < 8) {
+            msg.textContent = "Password must be at least 8 characters";
             msg.className = "msg error";
             return;
           }

@@ -34,7 +34,7 @@ const sendOtpEmail = async (toEmail, fullName, otp) => {
 
 // Reset Password Email
 const sendResetEmail = async (toEmail, fullName, resetToken, role) => {
-  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/api/auth/reset-redirect?token=${resetToken}&role=${role}`;
+  const resetUrl = `${process.env.FRONTEND_URL || "http://serveease.sandbox.pk"}/api/auth/reset-redirect?token=${resetToken}&role=${role}`;
   const mailOptions = {
     from: `"ServEase" <${process.env.GMAIL_USER || "adminservease@gmail.com"}>`,
     to: toEmail,

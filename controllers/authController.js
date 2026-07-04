@@ -187,4 +187,73 @@ const verifyResetToken = async (req, res) => {
   }
 };
 
-module.exports = { sendOtp, verifyOtp, forgotPassword, resetPassword, verifyResetToken };
+const getPublicProviders = async (req, res) => {
+  try {
+    const [providers] = await db.query(
+      `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+              p.rating, p.hourly_rate AS rate, p.approval_status,
+              (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
+       FROM provider_profiles p
+       JOIN users u ON u.id = p.user_id
+       JOIN services s ON s.id = p.service_id
+       WHERE p.approval_status = 'approved'
+       ORDER BY p.rating DESC LIMIT 3`
+    );
+    res.json({
+      success: true,
+      providers: providers.map(p => ({
+        id:          p.id,
+        name:        p.name,
+        service:     p.service,
+        category:    p.category,
+        rating:      parseFloat(p.rating || 0),
+        rate:        p.rate,
+        jobs_done:   p.jobs_done,
+        is_verified: 1,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+const getPublicProviderDetail = async (req, res) => {
+  const providerId = parseInt(req.params.id);
+  try {
+    const [[provider]] = await db.query(
+      `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+              p.rating, p.hourly_rate AS rate, p.approval_status,
+              u.address AS location, p.bio,
+              (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
+       FROM provider_profiles p
+       JOIN users u ON u.id = p.user_id
+       JOIN services s ON s.id = p.service_id
+       WHERE u.id = ?`, [providerId]);
+
+    if (!provider) return res.status(404).json({ success: false, message: "Provider not found" });
+
+    // All services by this provider's category
+    const [services] = await db.query(
+      `SELECT name FROM services WHERE category = ? AND is_active = 1`, [provider.category]);
+
+    res.json({
+      success: true,
+      data: {
+        id:               provider.id,
+        name:             provider.name,
+        service:          provider.service,
+        category:         provider.category,
+        rating:           parseFloat(provider.rating || 0),
+        rate:             provider.rate,
+        jobs_done:        provider.jobs_done,
+        location:         provider.location ?? '',
+        bio:              provider.bio ?? '',
+        is_verified:      provider.approval_status === 'approved' ? 1 : 0,
+        services_offered: services.map(s => s.name),
+        reviews:          [],
+      }
+    });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+};
+
+module.exports = { sendOtp, verifyOtp, forgotPassword, resetPassword, verifyResetToken, getPublicProviders, getPublicProviderDetail };

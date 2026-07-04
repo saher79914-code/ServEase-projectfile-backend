@@ -70,11 +70,12 @@ exports.getNotifications = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
-// CLEAR ALL NOTIFICATIONS (Admin — deletes everything)
+// CLEAR ALL NOTIFICATIONS (Admin — deletes read notifications only, keeps unread)
 exports.clearAllNotifications = async (req, res) => {
   try {
-    await db.query(`DELETE FROM notifications`);
-    res.status(200).json({ success: true, message: "All notifications cleared" });
+    // Only delete already-read notifications to prevent accidental data loss
+    await db.query(`DELETE FROM notifications WHERE is_read = 1`);
+    res.status(200).json({ success: true, message: "Read notifications cleared" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Server Error" });

@@ -19,10 +19,10 @@ exports.getDashboardStats = async (req, res) => {
     const [[{ new_requests }]] = await db.query(
       `SELECT COUNT(*) AS new_requests FROM bookings WHERE provider_id = ? AND status = 'pending'`, [provider_id]);
     const [[{ earnings_this_month }]] = await db.query(
-      `SELECT COALESCE(SUM(py.amount), 0) AS earnings_this_month
-       FROM payment py JOIN bookings b ON b.id = py.booking_id
-       WHERE b.provider_id = ? AND py.status = 'paid'
-         AND MONTH(py.created_at) = MONTH(CURDATE()) AND YEAR(py.created_at) = YEAR(CURDATE())`, [provider_id]);
+      `SELECT COALESCE(SUM(total_price), 0) AS earnings_this_month
+       FROM bookings
+       WHERE provider_id = ? AND status = 'completed'
+         AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())`, [provider_id]);
     res.json({
       provider_name: providerName,
       rating: provider?.rating ?? 0,

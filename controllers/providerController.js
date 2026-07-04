@@ -190,3 +190,19 @@ exports.getAcceptanceList = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
+// DELETE PROVIDER ACCOUNT PERMANENTLY
+exports.deleteProviderAccount = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Cascade delete automatically clears provider_profiles, bookings, notifications, complaints etc.
+    const [result] = await db.query("DELETE FROM users WHERE id = ?", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "Provider account not found" });
+    }
+    res.status(200).json({ success: true, message: "Provider account removed permanently" });
+  } catch (error) {
+    console.error("deleteProviderAccount error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};

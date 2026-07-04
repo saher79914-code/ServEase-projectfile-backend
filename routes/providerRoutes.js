@@ -10,16 +10,15 @@ const {
     getPendingProviders,
     approveProvider,
     rejectProvider,
-} = require("../controllers/providerController");
-//show list of provider that rejected and approved
-const {
-  getAcceptanceList
+    deleteProviderAccount,
+    getAcceptanceList,
 } = require("../controllers/providerController");
 
 // routes
 router.get("/pending", getPendingProviders);
 router.put("/approve/:id", approveProvider);
 router.put("/reject/:id", rejectProvider);
-router.get("/acceptance-list",getAcceptanceList);
+router.get("/acceptance-list", getAcceptanceList);
+router.delete("/remove-account/:id", deleteProviderAccount);
 
 module.exports = router;
