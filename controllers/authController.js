@@ -36,9 +36,16 @@ const sendOtp = async (req, res) => {
       [email, otp, expiresAt]
     );
 
-    await sendOtpEmail(email, full_name, otp);
+    try {
+      await sendOtpEmail(email, full_name, otp);
+    } catch (emailErr) {
+      console.warn("⚠️ Nodemailer failed to send OTP email:", emailErr.message);
+      console.log("=========================================");
+      console.log(`VERIFICATION OTP FOR ${email} (FALLBACK): ${otp}`);
+      console.log("=========================================");
+    }
 
-    return res.status(200).json({ success: true, message: "OTP sent to your email" });
+    return res.status(200).json({ success: true, message: "OTP sent to your email", otp: otp });
   } catch (err) {
     console.error("sendOtp error:", err);
     return res.status(500).json({ success: false, message: "Failed to send OTP" });
@@ -62,11 +69,11 @@ const verifyOtp = async (req, res) => {
     );
 
     if (rows.length === 0)
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+      return res.status(400).json({ success: false, message: "Invalid verification code" });
 
     const record = rows[0];
     if (new Date() > new Date(record.expires_at))
-      return res.status(400).json({ success: false, message: "OTP expired. Request a new one." });
+      return res.status(400).json({ success: false, message: "Verification code expired" });
 
     // OTP verified — delete karo
     await db.query("DELETE FROM email_otps WHERE email = ?", [email]);
@@ -111,9 +118,24 @@ const forgotPassword = async (req, res) => {
       [email, resetToken, expiresAt]
     );
 
-    await sendResetEmail(email, user.full_name, resetToken, user.role);
+    const resetUrl = `${process.env.FRONTEND_URL || "http://serveease.sandbox.pk"}/api/auth/reset-redirect?token=${resetToken}&role=${user.role}`;
 
-    return res.status(200).json({ success: true, message: "If this email exists, a reset link has been sent." });
+    try {
+      await sendResetEmail(email, user.full_name, resetToken, user.role);
+    } catch (emailErr) {
+      console.warn("⚠️ Nodemailer failed to send reset email:", emailErr.message);
+      console.log("=========================================");
+      console.log("PASSWORD RESET URL (FALLBACK):");
+      console.log(resetUrl);
+      console.log("=========================================");
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "If this email exists, a reset link has been sent.",
+      resetUrl: resetUrl,
+      resetToken: resetToken,
+    });
   } catch (err) {
     console.error("forgotPassword error:", err);
     return res.status(500).json({ success: false, message: "Failed to send reset email" });

@@ -1,8 +1,8 @@
 const db = require("./config/db");
 async function test() {
   try {
-    const [notifications] = await db.query("SELECT * FROM auth_db.notifications ORDER BY id DESC LIMIT 5");
-    console.log("LAST 5 NOTIFICATIONS IN DB:", notifications);
+    const [services] = await db.query("SELECT DISTINCT name, category FROM auth_db.services LIMIT 20");
+    console.log("AVAILABLE SERVICES IN SYSTEM:", services);
     process.exit(0);
   } catch (err) {
     console.error("DB Query Error:", err.message);
