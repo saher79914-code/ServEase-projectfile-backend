@@ -33,7 +33,7 @@ exports.getHomeData = async (req, res) => {
         rating:      parseFloat(p.rating),
         rate:        p.rate,
         jobs_done:   p.jobs_done,
-        is_verified: p.approval_status === 'approved' ? 1 : 0,
+        is_verified: p.approval_status === 'Approved' ? 1 : 0,
         is_new:      p.is_new,
       })),
     });
@@ -52,7 +52,7 @@ exports.getProviders = async (req, res) => {
       FROM provider_profiles p
       JOIN users u ON u.id = p.user_id
       JOIN services s ON s.id = p.service_id
-      WHERE p.approval_status = 'approved'`;
+      WHERE p.approval_status = 'Approved'`;
 
     const params = [];
     if (category && category !== 'all') {
@@ -71,7 +71,7 @@ exports.getProviders = async (req, res) => {
       rating:      parseFloat(p.rating),
       rate:        p.rate,
       jobs_done:   p.jobs_done,
-      is_verified: p.approval_status === 'approved' ? 1 : 0,
+      is_verified: p.approval_status === 'Approved' ? 1 : 0,
       is_new:      p.is_new,
     })));
   } catch (err) { res.status(500).json({ message: err.message }); }
@@ -107,7 +107,7 @@ exports.getProviderDetail = async (req, res) => {
       jobs_done:        provider.jobs_done,
       location:         provider.location ?? '',
       bio:              provider.bio ?? '',
-      is_verified:      provider.approval_status === 'approved' ? 1 : 0,
+      is_verified:      provider.approval_status === 'Approved' ? 1 : 0,
       services_offered: services.map(s => s.name),
       reviews:          [], // reviews table baad mein add hogi
     });

@@ -204,7 +204,7 @@ exports.submitCommission = async (req, res) => {
   const screenshot = req.file?.filename ?? null;
   try {
     await db.query(
-      `INSERT INTO commission_payments (provider_id, amount, payment_method, screenshot, status, created_at)
+      `INSERT INTO commission_payments (provider_id, Amount, payment_method, screenshot, status, created_at)
        VALUES (?, ?, ?, ?, 'pending', NOW())`,
       [provider_id, amount, payment_method, screenshot]);
 
