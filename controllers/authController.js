@@ -118,10 +118,14 @@ const forgotPassword = async (req, res) => {
       [email, resetToken, expiresAt]
     );
 
-    const resetUrl = `${process.env.FRONTEND_URL || "http://serveease.sandbox.pk"}/api/auth/reset-redirect?token=${resetToken}&role=${user.role}`;
+    // Dynamically resolve base URL using request host/protocol so local phone/emulator and live server URLs work automatically
+    const host = req.get("host") || "serveease.sandbox.pk";
+    const protocol = req.protocol === "https" || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
+    const dynamicBaseUrl = `${protocol}://${host}`;
+    const resetUrl = `${dynamicBaseUrl}/api/auth/reset-redirect?token=${resetToken}&role=${user.role}`;
 
     try {
-      await sendResetEmail(email, user.full_name, resetToken, user.role);
+      await sendResetEmail(email, user.full_name, resetToken, user.role, dynamicBaseUrl);
     } catch (emailErr) {
       console.warn("⚠️ Nodemailer failed to send reset email:", emailErr.message);
       console.log("=========================================");
@@ -165,7 +169,9 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid or expired reset link" });
 
     const record = rows[0];
-    if (new Date() > new Date(record.expires_at))
+    // Timezone-safe comparison using database clock values
+    const [[timeCheck]] = await db.query("SELECT NOW() AS now_time, ? AS expires_time", [record.expires_at]);
+    if (new Date(timeCheck.now_time).getTime() > new Date(timeCheck.expires_time).getTime())
       return res.status(400).json({ success: false, message: "Reset link expired. Please request a new one." });
 
     const hashed = await bcrypt.hash(new_password, 12);
@@ -200,7 +206,10 @@ const verifyResetToken = async (req, res) => {
     if (rows.length === 0)
       return res.status(400).json({ success: false, valid: false, message: "Invalid token" });
 
-    if (new Date() > new Date(rows[0].expires_at))
+    const record = rows[0];
+    // Timezone-safe comparison using database clock values
+    const [[timeCheck]] = await db.query("SELECT NOW() AS now_time, ? AS expires_time", [record.expires_at]);
+    if (new Date(timeCheck.now_time).getTime() > new Date(timeCheck.expires_time).getTime())
       return res.status(400).json({ success: false, valid: false, message: "Token expired" });
 
     return res.status(200).json({ success: true, valid: true, email: rows[0].email });
