@@ -1,35 +1,32 @@
-const db = require("../config/db");
+const jwt = require("jsonwebtoken");
 
-// Checks if user is blocked before allowing access
-const checkBlocked = async (req, res, next) => {
-  try {
-    // provider_id ya customer_id query, body, ya params se le lo
-    const userId =
-      req.query.provider_id ||
-      req.query.customer_id ||
-      req.body.provider_id ||
-      req.body.customer_id ||
-      req.params.id;
+const JWT_SECRET = "servease_secret_key";
 
-    if (!userId) return next(); // agar id nahi mili, normal chalne do
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-    const [[user]] = await db.query(
-      `SELECT is_blocked FROM users WHERE id = ?`, [userId]
-    );
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided"
+    });
+  }
 
-    if (user && user.is_blocked === 1) {
-      return res.status(403).json({
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({
         success: false,
-        message: "Your account has been blocked by admin.",
-        blocked: true,
+        message: "Invalid token"
       });
     }
 
+    req.user = decoded;
     next();
-  } catch (err) {
-    console.error("checkBlocked error:", err.message);
-    next(); // error ho toh request block na karo, aage jaane do
-  }
+  });
 };
 
-module.exports = checkBlocked;
+module.exports = {
+  verifyToken,
+  JWT_SECRET
+};
