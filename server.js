@@ -46,6 +46,11 @@ app.use("/",         require("./routes/registerRoutes"));
 // ── Services (GET public, write protected inside route) ──
 app.use("/api/services", require("./routes/serviceRoutes"));
 
+// ── Provider Custom Service Requests (POST by provider, protected by authMiddleware) ──
+const { submitServiceRequest } = require("./controllers/serviceRequestController");
+const authMiddleware = require("./middleware/authMiddleware");
+app.post("/api/service-requests", authMiddleware, submitServiceRequest);
+
 // ── Admin (protected inside each route file) ──
 app.use("/api/admin/settings",          require("./routes/adminSettingsRoutes"));
 app.use("/api/admin/service-requests",  require("./routes/serviceRequestRoutes"));
