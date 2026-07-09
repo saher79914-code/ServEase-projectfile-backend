@@ -14,17 +14,8 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, cb) => {
-    // Allow mobile apps (no origin), whitelisted origins, localhost, and local network IPs (192.168.x, 10.x, 172.x)
-    if (!origin || 
-        allowedOrigins.includes(origin) || 
-        origin.startsWith("http://localhost:") || 
-        origin.startsWith("http://127.0.0.1:") ||
-        origin.startsWith("http://192.168.") ||
-        origin.startsWith("http://10.") ||
-        origin.startsWith("http://172.")) {
-      return cb(null, true);
-    }
-    cb(new Error("Not allowed by CORS"));
+    // Whitelist all origins to completely eliminate CORS errors for any mobile webview, local IP, or live domain
+    cb(null, true);
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
