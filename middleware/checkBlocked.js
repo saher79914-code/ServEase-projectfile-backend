@@ -2,13 +2,7 @@ const db = require("../config/db");
 
 const checkBlocked = async (req, res, next) => {
   try {
-    const userId =
-      req.query.provider_id ||
-      req.query.customer_id ||
-      req.body.provider_id ||
-      req.body.customer_id ||
-      req.params.id;
-
+    const userId = req.user.id;
     if (!userId) return next();
 
     const [[user]] = await db.query(
@@ -23,7 +17,10 @@ const checkBlocked = async (req, res, next) => {
       });
     }
 
-    next();
+   return res.status(500).json({
+  success: false,
+  message: "Internal Server Error",
+});
   } catch (err) {
     console.error("checkBlocked error:", err.message);
     next();
