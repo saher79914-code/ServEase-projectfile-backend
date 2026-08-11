@@ -35,6 +35,7 @@ app.use((req, res, next) => {
 
 // ── Static files ──
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.static(path.join(__dirname, "public")));
 
 // ── Auth & Register (PUBLIC) ──
 app.use("/api/auth", require("./routes/authRoutes"));

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Deletion Request — ServEase</title>
+  <meta name="description" content="Request account and data deletion from the ServEase platform. CEO: Ayesha Liaquat Ali. Developer: ServEase Team.">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'brand-green': '#1B8B4B',
+            'brand-green-dark': '#145E33',
+            'brand-orange': '#E8845A',
+            'brand-bg': '#F5F8F0',
+            'brand-muted': '#757575'
+          },
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Plus Jakarta Sans', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body class="bg-brand-bg text-slate-800 font-body antialiased selection:bg-brand-orange selection:text-white flex flex-col min-h-screen">
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-50 bg-brand-bg/95 backdrop-blur-md border-b border-emerald-800/10 transition-all duration-300" id="site-header">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
+      <a href="index.html" class="flex items-center gap-3 group" id="header-logo-link">
+        <img src="assets/logo.png" alt="ServEase Logo" class="w-10 h-10 rounded-xl transition-transform duration-300 group-hover:scale-110" width="40" height="40">
+        <span class="font-heading font-extrabold text-2xl text-brand-green-dark tracking-tight">Serv<span class="text-brand-orange">Ease</span></span>
+      </a>
+
+      <nav class="hidden md:flex items-center gap-8 font-heading font-semibold text-sm text-brand-green-dark">
+        <a href="index.html#features" class="hover:text-brand-orange transition-colors">Features</a>
+        <a href="index.html#providers" class="hover:text-brand-orange transition-colors">Providers</a>
+        <a href="index.html#how-it-works" class="hover:text-brand-orange transition-colors">How It Works</a>
+        <a href="data-deletion.html" class="text-brand-orange font-bold">Data Deletion</a>
+      </nav>
+
+      <div class="flex items-center gap-4">
+        <a href="index.html#download" class="hidden sm:inline-flex items-center justify-center font-heading font-semibold text-sm px-5 py-2.5 rounded-xl bg-brand-green text-white shadow-md shadow-brand-green/20 hover:bg-brand-green-dark transition-all duration-300">Back to App</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow max-w-3xl mx-auto px-6 py-16">
+    <div class="bg-white border border-slate-100 rounded-3xl p-8 sm:p-12 shadow-sm">
+      <div class="mb-8 border-b border-slate-100 pb-8 text-center sm:text-left">
+        <span class="inline-block bg-rose-50 text-rose-600 text-xs font-bold px-3.5 py-1.5 rounded-full uppercase tracking-wider mb-3">User Privacy Control</span>
+        <h1 class="font-heading font-black text-3xl sm:text-4xl text-brand-green-dark mb-3">Data & Account Deletion Request</h1>
+        <p class="text-sm text-brand-muted">Submit an automated request to permanently erase your profile and records from ServEase servers.</p>
+      </div>
+
+      <div class="space-y-8">
+        <div class="bg-amber-50/70 border border-amber-200/60 rounded-2xl p-5 text-sm text-amber-900 leading-relaxed">
+          <p class="font-semibold mb-1">⚠️ Important Warning:</p>
+          <p>Account deletion is permanent. Once processed by our administrative team, all your booking history, customer ratings, provider credentials, and active job requests will be erased and cannot be recovered.</p>
+        </div>
+
+        <form id="deletion-form" onsubmit="handleDeletionSubmit(event)" class="space-y-6">
+          <div>
+            <label for="user-email" class="block font-heading font-bold text-sm text-brand-green-dark mb-2">Registered Phone / Email Address</label>
+            <input type="text" id="user-email" required placeholder="e.g. +92 300 1234567 or user@servease.pk" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green text-sm bg-slate-50">
+          </div>
+
+          <div>
+            <label for="user-role" class="block font-heading font-bold text-sm text-brand-green-dark mb-2">Account Type</label>
+            <select id="user-role" class="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green text-sm bg-slate-50">
+              <option value="customer">Customer Account</option>
+              <option value="provider">Service Provider Account</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="deletion-reason" class="block font-heading font-bold text-sm text-brand-green-dark mb-2">Reason for Deletion (Optional)</label>
+            <textarea id="deletion-reason" rows="3" placeholder="Tell us why you wish to delete your account..." class="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-green text-sm bg-slate-50"></textarea>
+          </div>
+
+          <button type="submit" class="w-full font-heading font-bold text-base py-4 rounded-xl bg-brand-green text-white shadow-lg shadow-brand-green/20 hover:bg-brand-green-dark transition-all duration-300">Submit Deletion Request</button>
+        </form>
+
+        <div id="deletion-status" class="hidden bg-emerald-50 border border-brand-green/20 rounded-2xl p-6 text-center">
+          <svg class="w-12 h-12 text-brand-green mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path stroke-width="2" d="M9 12l2 2 4-4"/></svg>
+          <h3 class="font-heading font-bold text-lg text-brand-green-dark mb-1">Request Received</h3>
+          <p class="text-sm text-slate-600">Your account deletion request has been logged. Under the supervision of <strong>CEO Ayesha Liaquat Ali</strong> and the <strong>ServEase Team</strong>, your data will be permanently purged within 30 days.</p>
+        </div>
+
+        <div class="border-t border-slate-100 pt-6 text-xs text-brand-muted leading-relaxed">
+          <p><strong>Support Email:</strong> adminservease@gmail.com</p>
+          <p class="mt-1"><strong>What data will be removed?</strong> Full profile, CNIC verification photos, active job listings, ratings, and log history.</p>
+          <p class="mt-1"><strong>What data is retained?</strong> Financial transaction receipts kept for statutory audit compliance only.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function handleDeletionSubmit(e) {
+      e.preventDefault();
+      document.getElementById('deletion-form').classList.add('hidden');
+      document.getElementById('deletion-status').classList.remove('hidden');
+    }
+  </script>
+
+  <!-- Footer -->
+  <footer class="bg-brand-green-dark text-slate-300 pt-16 pb-10 border-t-4 border-brand-green mt-auto">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
+      <div class="flex flex-col gap-4">
+        <a href="index.html" class="flex items-center gap-3">
+          <img src="assets/logo.png" alt="ServEase Logo" class="w-9 h-9 rounded-xl" width="36" height="36">
+          <span class="font-heading font-extrabold text-2xl text-white">Serv<span class="text-brand-orange">Ease</span></span>
+        </a>
+        <p class="text-xs text-emerald-100/75 leading-relaxed">Instantly book verified, rating-backed local technicians for home services.</p>
+        <p class="text-xs text-emerald-100/80 mt-1">CEO: <strong class="text-white">Ayesha Liaquat Ali</strong> | Developer: <strong class="text-white">ServEase Team</strong></p>
+      </div>
+      <div>
+        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-white mb-4">Legal</h3>
+        <ul class="flex flex-col gap-3 text-sm">
+          <li><a href="privacy.html" class="text-slate-300 hover:text-white transition-colors">Privacy Policy</a></li>
+          <li><a href="terms.html" class="text-slate-300 hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="data-deletion.html" class="text-brand-orange font-bold">Data Deletion</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-heading font-bold text-sm uppercase tracking-wide text-white mb-4">Navigation</h3>
+        <ul class="flex flex-col gap-3 text-sm">
+          <li><a href="index.html" class="text-slate-300 hover:text-white transition-colors">Home Landing Page</a></li>
+          <li><a href="index.html#faq" class="text-slate-300 hover:text-white transition-colors">Frequently Asked Questions</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-6 pt-6 border-t border-white/10 text-center text-xs text-slate-400">
+      &copy; 2026 ServEase Project. All rights reserved.
+    </div>
+  </footer>
+
+</body>
+</html>

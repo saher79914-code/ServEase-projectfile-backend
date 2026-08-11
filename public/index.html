@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServEase — On-Demand Home Services | Hire Local Professionals</title>
+  <meta name="description" content="Instantly hire verified local professionals for plumbing, tailoring, beauty, education, and cleaning. Transparent hourly rates and secure bookings.">
+  <meta name="keywords" content="home services app, local plumber, hire electrician, house cleaning service, local repair service, servease app, verified providers">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Outfit', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              green: '#1B8B4B',
+              'green-dark': '#145E33',
+              orange: '#E8845A',
+              bg: '#F5F8F0',
+              surface: '#F8F9FA',
+              text: '#1C1B1F',
+              muted: '#757575',
+            },
+          },
+        },
+      },
+    }
+  </script>
+
+  <!-- Custom CSS for animations and tweaks -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body class="font-body text-brand-text bg-brand-bg overflow-x-hidden antialiased">
+
+  <!-- ================================================================== -->
+  <!-- 1. HEADER                                                          -->
+  <!-- ================================================================== -->
+  <header id="site-header" class="sticky top-0 z-50 bg-brand-bg/85 backdrop-blur-xl border-b border-emerald-800/10 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-3 group" id="header-logo-link">
+        <img src="assets/logo.png" alt="ServEase Logo" class="w-10 h-10 rounded-xl transition-transform duration-300 group-hover:scale-110" width="40" height="40">
+        <span class="font-heading font-extrabold text-2xl text-brand-green-dark tracking-tight">Serv<span class="text-brand-orange">Ease</span></span>
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:block" aria-label="Main navigation">
+        <ul class="flex gap-8">
+          <li><a href="#features" class="font-heading font-medium text-brand-muted hover:text-brand-green transition-colors">Features</a></li>
+          <li><a href="#providers" class="font-heading font-medium text-brand-muted hover:text-brand-green transition-colors">Verified Providers</a></li>
+          <li><a href="#how-it-works" class="font-heading font-medium text-brand-muted hover:text-brand-green transition-colors">How It Works</a></li>
+          <li><a href="#faq" class="font-heading font-medium text-brand-muted hover:text-brand-green transition-colors">FAQ</a></li>
+        </ul>
+      </nav>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-5">
+        <a href="#how-it-works" class="hidden sm:inline-flex items-center justify-center font-heading font-semibold text-sm px-6 py-3 rounded-xl bg-brand-green text-white hover:bg-brand-green-dark hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-green/20 transition-all duration-300" id="header-get-started-btn">Get Started</a>
+        <button class="md:hidden flex flex-col justify-between w-6 h-[18px]" id="mobile-nav-toggle" aria-expanded="false" aria-label="Toggle navigation" aria-controls="mobile-menu-overlay">
+          <span class="block w-full h-[2.5px] bg-brand-green-dark rounded-full transition-all duration-300 origin-left hamburger-bar"></span>
+          <span class="block w-full h-[2.5px] bg-brand-green-dark rounded-full transition-all duration-300 hamburger-bar"></span>
+          <span class="block w-full h-[2.5px] bg-brand-green-dark rounded-full transition-all duration-300 origin-left hamburger-bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="fixed inset-0 bg-brand-green-dark/40 backdrop-blur-md z-[1000] hidden opacity-0 transition-opacity duration-300" id="mobile-menu-overlay" role="dialog" aria-modal="true">
+    <div class="absolute top-0 right-0 w-full max-w-xs h-full bg-brand-bg p-8 shadow-2xl flex flex-col translate-x-full transition-transform duration-300" id="mobile-menu-container">
+      <div class="flex items-center justify-between mb-12">
+        <a href="#" class="flex items-center gap-3">
+          <img src="assets/logo.png" alt="ServEase Logo" class="w-10 h-10 rounded-xl" width="40" height="40">
+          <span class="font-heading font-extrabold text-2xl text-brand-green-dark">Serv<span class="text-brand-orange">Ease</span></span>
+        </a>
+        <button class="text-3xl text-brand-green-dark hover:text-brand-orange transition-colors" id="mobile-menu-close" aria-label="Close menu">&times;</button>
+      </div>
+      <nav>
+        <ul class="flex flex-col gap-6">
+          <li><a href="#features" class="mobile-nav-link font-heading font-semibold text-xl text-brand-green-dark hover:text-brand-orange transition-colors">Features</a></li>
+          <li><a href="#providers" class="mobile-nav-link font-heading font-semibold text-xl text-brand-green-dark hover:text-brand-orange transition-colors">Verified Providers</a></li>
+          <li><a href="#how-it-works" class="mobile-nav-link font-heading font-semibold text-xl text-brand-green-dark hover:text-brand-orange transition-colors">How It Works</a></li>
+          <li><a href="#faq" class="mobile-nav-link font-heading font-semibold text-xl text-brand-green-dark hover:text-brand-orange transition-colors">FAQ</a></li>
+        </ul>
+      </nav>
+      <div class="mt-auto">
+        <a href="#how-it-works" class="mobile-nav-link block w-full text-center font-heading font-semibold px-6 py-4 rounded-xl bg-brand-green text-white hover:bg-brand-green-dark transition-all">Get Started</a>
+      </div>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ================================================================ -->
+    <!-- 2. HERO                                                          -->
+    <!-- ================================================================ -->
+    <section id="hero" class="pt-16 md:pt-24 pb-20 md:pb-28 relative overflow-hidden">
+      <!-- Animated Background Particles -->
+      <div id="hero-particles" class="absolute inset-0 pointer-events-none z-0"></div>
+
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
+        <!-- Content -->
+        <div class="flex flex-col gap-7 text-center lg:text-left">
+          <div class="inline-flex items-center self-center lg:self-start bg-emerald-100/60 border border-brand-green/20 px-4 py-1.5 rounded-full gap-2">
+            <span class="w-2 h-2 bg-brand-green rounded-full animate-pulse-dot"></span>
+            <span class="text-sm font-semibold text-brand-green-dark">v1.0 Release — Safe Local Home Services</span>
+          </div>
+          <h1 class="font-heading font-black text-4xl sm:text-5xl lg:text-[56px] leading-[1.12] tracking-tight text-brand-green-dark">
+            Reliable home services, <span class="text-brand-orange">now simplified.</span>
+          </h1>
+          <p class="text-lg sm:text-xl text-brand-muted max-w-xl mx-auto lg:mx-0">
+            Instantly book trusted local professionals for cleaning, tailoring, beauty, Mehndi, and custom services. Vetted profiles, fixed rates, and direct WhatsApp dispatch.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <a href="#how-it-works" class="inline-flex items-center justify-center font-heading font-semibold text-lg px-8 py-4 rounded-2xl bg-brand-green text-white hover:bg-brand-green-dark hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-green/20 transition-all duration-300" id="hero-get-started-btn">Book a Service</a>
+            <a href="#features" class="inline-flex items-center justify-center gap-2 font-heading font-semibold text-lg px-8 py-4 rounded-2xl border-2 border-brand-green-dark text-brand-green-dark hover:bg-brand-green/5 hover:-translate-y-1 transition-all duration-300" id="hero-how-it-works-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+              Explore Features
+            </a>
+          </div>
+          <div class="border-l-4 border-brand-orange pl-5 mt-4 text-left hidden sm:block">
+            <span class="block text-xs uppercase tracking-widest font-bold text-brand-green-dark mb-1">Local Network Security</span>
+            <span class="font-heading text-sm text-brand-muted italic">"Every provider is vetted with CNIC registration and security deposit validation before receiving bookings."</span>
+          </div>
+        </div>
+
+        <!-- Phone Mockup -->
+        <div class="relative flex justify-center items-center perspective-container">
+          <!-- Ambient glow -->
+          <div class="absolute w-85 h-85 bg-gradient-radial from-brand-orange/20 via-brand-green/5 to-transparent blur-3xl z-0"></div>
+
+          <div class="phone-tilt-wrapper relative z-10 w-full max-w-[280px]" id="hero-phone-mockup" data-tilt>
+            <div class="phone-frame relative w-full bg-[#0b0f19] border-[12px] border-[#1e293b] rounded-[40px] shadow-2xl shadow-brand-green-dark/20 overflow-hidden" style="padding-top:177.78%">
+              <div class="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-[22px] bg-black rounded-xl z-20"></div>
+              <div class="absolute inset-0 rounded-[28px] overflow-hidden">
+                <img src="assets/dashboard.png" alt="ServEase Mobile App Dashboard" class="w-full h-full object-cover object-top" loading="eager">
+              </div>
+              <div class="absolute inset-0 bg-gradient-to-br from-white/[0.12] to-transparent pointer-events-none z-30"></div>
+            </div>
+
+            <!-- Floating Badges -->
+            <div class="floating-badge absolute top-[14%] -left-[32%] flex items-center gap-2.5 bg-white border border-emerald-100/50 shadow-lg px-4 py-2.5 rounded-full z-20 animate-float-slow">
+              <div class="w-7 h-7 rounded-full bg-emerald-100/60 flex items-center justify-center text-brand-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <span class="font-heading font-bold text-sm text-brand-green-dark whitespace-nowrap">Verified Profiles</span>
+            </div>
+
+            <div class="floating-badge absolute top-[44%] -right-[28%] flex items-center gap-2.5 bg-white border border-emerald-100/50 shadow-lg px-4 py-2.5 rounded-full z-20 animate-float-fast">
+              <div class="w-7 h-7 rounded-full bg-orange-100/60 flex items-center justify-center text-brand-orange">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <span class="font-heading font-bold text-sm text-brand-green-dark whitespace-nowrap">Instant WhatsApp</span>
+            </div>
+
+            <div class="floating-badge absolute bottom-[10%] -left-[25%] flex items-center gap-2.5 bg-white border border-emerald-100/50 shadow-lg px-4 py-2.5 rounded-full z-20 animate-float-slow" style="animation-delay:-2s">
+              <div class="w-7 h-7 rounded-full bg-emerald-100/60 flex items-center justify-center text-brand-green">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <span class="font-heading font-bold text-sm text-brand-green-dark whitespace-nowrap">Vetted Dues</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 3. TRUST STRIP                                                   -->
+    <!-- ================================================================ -->
+    <section class="pb-20">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white border border-emerald-800/10 shadow-lg rounded-3xl p-8 md:p-10 scroll-reveal">
+          <div class="flex gap-5 items-start">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-brand-green shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-heading font-bold text-lg text-brand-green-dark mb-1">CNIC Vetted Providers</h3>
+              <p class="text-sm text-brand-muted">Every professional must upload CNIC details, verified manually before booking activation.</p>
+            </div>
+          </div>
+          <div class="flex gap-5 items-start">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-brand-green shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div>
+              <h3 class="font-heading font-bold text-lg text-brand-green-dark mb-1">Custom Trade Proposals</h3>
+              <p class="text-sm text-brand-muted">Need a niche specialty? Providers can propose new categories directly to admins.</p>
+            </div>
+          </div>
+          <div class="flex gap-5 items-start">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-brand-green shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-heading font-bold text-lg text-brand-green-dark mb-1">Transparent Rates</h3>
+              <p class="text-sm text-brand-muted">Rates are shown as hourly prices. Settle booking costs directly with the provider.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 4. FEATURES                                                      -->
+    <!-- ================================================================ -->
+    <section id="features" class="py-24 bg-white border-y border-slate-100">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16 scroll-reveal">
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mb-5 tracking-tight">Everything you need to hire and earn locally</h2>
+          <p class="text-lg text-brand-muted">Ditch the complicated phone directories. ServEase gives customers instant match capabilities and providers a digital wallet ledger to build their career.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Feature Cards -->
+          <div class="feature-card-3d group bg-brand-bg/40 border border-slate-100 rounded-3xl p-9 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 hover:border-brand-green/20 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-green mb-6 group-hover:bg-brand-green group-hover:text-white transition-colors duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark mb-3">Service Providers</h3>
+            <p class="text-[15px] text-brand-muted">Vetted provider profiles showing bio details, ratings, and experience levels.</p>
+          </div>
+          <div class="feature-card-3d group bg-brand-bg/40 border border-slate-100 rounded-3xl p-9 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 hover:border-brand-green/20 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-green mb-6 group-hover:bg-brand-green group-hover:text-white transition-colors duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark mb-3">Custom Requests</h3>
+            <p class="text-[15px] text-brand-muted">Propose custom service categories. Admins review and activate request parameters in real-time.</p>
+          </div>
+          <div class="feature-card-3d group bg-brand-bg/40 border border-slate-100 rounded-3xl p-9 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 hover:border-brand-green/20 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-green mb-6 group-hover:bg-brand-green group-hover:text-white transition-colors duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark mb-3">Vetted Security</h3>
+            <p class="text-[15px] text-brand-muted">Mandatory security deposits and verification screenings to block fraudulent providers.</p>
+          </div>
+          <div class="feature-card-3d group bg-brand-bg/40 border border-slate-100 rounded-3xl p-9 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 hover:border-brand-green/20 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-green mb-6 group-hover:bg-brand-green group-hover:text-white transition-colors duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark mb-3">Live Booking Status</h3>
+            <p class="text-[15px] text-brand-muted">Track statuses from 'Pending' and 'Accepted' to 'On the Way', 'In Progress', and 'Completed'.</p>
+          </div>
+          <div class="feature-card-3d group bg-brand-bg/40 border border-slate-100 rounded-3xl p-9 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 hover:border-brand-green/20 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-green mb-6 group-hover:bg-brand-green group-hover:text-white transition-colors duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark mb-3">Interactive Review Desk</h3>
+            <p class="text-[15px] text-brand-muted">Leave ratings and comments after service completion. Build profile scores with direct reviews.</p>
+          </div>
+          <div class="feature-card-3d group bg-brand-bg/40 border border-slate-100 rounded-3xl p-9 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 hover:border-brand-green/20 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-brand-green mb-6 group-hover:bg-brand-green group-hover:text-white transition-colors duration-300">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark mb-3">Moderated Complaints</h3>
+            <p class="text-[15px] text-brand-muted">File complaints about booking problems. Admins warnings keep providers reliable.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 5. DYNAMIC VERIFIED PROVIDERS SHOWCASE                            -->
+    <!-- ================================================================ -->
+    <section id="providers" class="py-24 bg-brand-bg/20">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16 scroll-reveal">
+          <span class="font-heading font-bold text-sm uppercase tracking-widest text-brand-green">Expert Technicians</span>
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mt-2 mb-5 tracking-tight">Meet Our Top-Rated Local Providers</h2>
+          <p class="text-lg text-brand-muted">Dynamically sourced from our live service database. Checked, verified, and ready to assist you.</p>
+        </div>
+
+        <!-- Dynamic JS Container -->
+        <div id="providers-dynamic-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <!-- Loading State (will be replaced by JS) -->
+          <div class="col-span-full text-center py-12">
+            <div class="inline-block w-8 h-8 border-4 border-brand-green border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-brand-muted mt-3 font-medium">Fetching verified providers...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 6. PRODUCT SHOWCASE                                              -->
+    <!-- ================================================================ -->
+    <section class="py-24 bg-white">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-20 scroll-reveal">
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mb-5 tracking-tight">Designed for seamless local bookings</h2>
+          <p class="text-lg text-brand-muted">Take a look inside the ServEase mobile screens that power the local service connection.</p>
+        </div>
+
+        <!-- Showcase 1 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center mb-24 lg:mb-32">
+          <div class="flex flex-col gap-6 scroll-reveal order-1">
+            <span class="font-heading font-bold text-sm uppercase tracking-widest text-brand-green">Customer Experience</span>
+            <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark leading-tight">Match and book in under a minute</h2>
+            <p class="text-brand-muted">Browse categories, view technicians' bios, experience, and transparent hourly rates. Choose your convenient slot and track the provider's dispatch steps until they arrive.</p>
+            <ul class="flex flex-col gap-4 mt-2">
+              <li class="flex items-center gap-3 text-[15px] font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Filter by service rating and specialties</li>
+              <li class="flex items-center gap-3 text-[15px] font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Real-time status updates: 'On the Way', 'In Progress'</li>
+              <li class="flex items-center gap-3 text-[15px] font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Fixed cost quotes according to provider parameters</li>
+            </ul>
+          </div>
+          <div class="relative flex justify-center items-center order-2 perspective-container">
+            <div class="absolute w-72 h-72 rounded-full bg-emerald-50 blur-[60px] z-0"></div>
+            <div class="phone-tilt-wrapper relative z-10 w-full max-w-[260px] scroll-reveal" data-tilt>
+              <div class="phone-frame relative w-full bg-[#0b0f19] border-[12px] border-[#1e293b] rounded-[40px] shadow-2xl shadow-brand-green-dark/20 overflow-hidden" style="padding-top:177.78%">
+                <div class="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-[22px] bg-black rounded-xl z-20"></div>
+                <div class="absolute inset-0 rounded-[28px] overflow-hidden"><img src="assets/booking_tracker.png" alt="ServEase Booking Tracker" class="w-full h-full object-cover object-top" loading="lazy"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-white/[0.12] to-transparent pointer-events-none z-30"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase 2 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          <div class="relative flex justify-center items-center order-2 lg:order-1 perspective-container">
+            <div class="absolute w-72 h-72 rounded-full bg-orange-50 blur-[60px] z-0"></div>
+            <div class="phone-tilt-wrapper relative z-10 w-full max-w-[260px] scroll-reveal" data-tilt>
+              <div class="phone-frame relative w-full bg-[#0b0f19] border-[12px] border-[#1e293b] rounded-[40px] shadow-2xl shadow-brand-green-dark/20 overflow-hidden" style="padding-top:177.78%">
+                <div class="absolute top-3 left-1/2 -translate-x-1/2 w-[100px] h-[22px] bg-black rounded-xl z-20"></div>
+                <div class="absolute inset-0 rounded-[28px] overflow-hidden"><img src="assets/provider_profile.png" alt="ServEase Provider Profile" class="w-full h-full object-cover object-top" loading="lazy"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-white/[0.12] to-transparent pointer-events-none z-30"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-6 scroll-reveal order-1 lg:order-2">
+            <span class="font-heading font-bold text-sm uppercase tracking-widest text-brand-green">Provider Ledger</span>
+            <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark leading-tight">Run your home service business</h2>
+            <p class="text-brand-muted">Accept service orders, build up client ratings, and keep an active transaction timeline. Track pending commissions seamlessly and request admin approval for custom services.</p>
+            <ul class="flex flex-col gap-4 mt-2">
+              <li class="flex items-center gap-3 text-[15px] font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Log experience levels and upload bio profiles</li>
+              <li class="flex items-center gap-3 text-[15px] font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> In-app wallet tracking for commission payouts</li>
+              <li class="flex items-center gap-3 text-[15px] font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Direct verification with screenshot upload</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 7. HOW IT WORKS                                                  -->
+    <!-- ================================================================ -->
+    <section id="how-it-works" class="py-24 bg-white border-y border-slate-100">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16 scroll-reveal">
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mb-5 tracking-tight">How ServEase Works</h2>
+          <p class="text-lg text-brand-muted">Connecting local clients with professional service providers is quick and reliable.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+          <!-- Connector lines (desktop) -->
+          <div class="hidden md:block absolute top-[36px] left-[calc(33.33%+8px)] right-[calc(33.33%+8px)] h-0.5 bg-brand-green/35 z-0"></div>
+
+          <div class="flex flex-col items-center text-center gap-5 scroll-reveal relative z-10">
+            <div class="w-[72px] h-[72px] rounded-full bg-emerald-50 flex items-center justify-center font-heading font-extrabold text-3xl text-brand-green shadow-md shadow-brand-green/10 step-number-3d" data-tilt data-tilt-scale="1.1">1</div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark">Choose Your Service</h3>
+            <p class="text-[15px] text-brand-muted">Select standard cleaning, tailoring, beauty, education, or request custom provider listings.</p>
+          </div>
+          <div class="flex flex-col items-center text-center gap-5 scroll-reveal relative z-10">
+            <div class="w-[72px] h-[72px] rounded-full bg-emerald-50 flex items-center justify-center font-heading font-extrabold text-3xl text-brand-green shadow-md shadow-brand-green/10 step-number-3d" data-tilt data-tilt-scale="1.1">2</div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark">Match with Verified Provider</h3>
+            <p class="text-[15px] text-brand-muted">Match with vetted providers based on hourly rates, bio credentials, and local reviews.</p>
+          </div>
+          <div class="flex flex-col items-center text-center gap-5 scroll-reveal relative z-10">
+            <div class="w-[72px] h-[72px] rounded-full bg-emerald-50 flex items-center justify-center font-heading font-extrabold text-3xl text-brand-green shadow-md shadow-brand-green/10 step-number-3d" data-tilt data-tilt-scale="1.1">3</div>
+            <h3 class="font-heading font-bold text-xl text-brand-green-dark">Settle Cost Directly</h3>
+            <p class="text-[15px] text-brand-muted">Track service status in real-time. Rate performance and settle payments directly with the provider.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 8. WHY SERVEASE (COMPARISON)                                     -->
+    <!-- ================================================================ -->
+    <section class="py-24 bg-brand-bg/30">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16 scroll-reveal">
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mb-5 tracking-tight">Upgrade your local hiring</h2>
+          <p class="text-lg text-brand-muted">Why homeowners and technicians are switching from unvetted listings to ServEase.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
+          <!-- Traditional -->
+          <div class="bg-white border border-emerald-800/10 rounded-3xl p-10 scroll-reveal">
+            <h3 class="font-heading font-bold text-2xl text-brand-green-dark mb-2">Unvetted Classifieds & Directory Listings</h3>
+            <p class="text-sm text-brand-muted/70 uppercase tracking-wide font-semibold mb-8">Traditional local hiring method</p>
+            <ul class="flex flex-col gap-6">
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span><strong class="text-brand-green-dark">No Background Checks:</strong> You cannot verify provider identity, CNIC details, or trustworthiness.</span></li>
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span><strong class="text-brand-green-dark">Hidden Surcharges:</strong> Prices are negotiated on arrival, causing unexpected fees.</span></li>
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span><strong class="text-brand-green-dark">No Tracking or Dispatch:</strong> Endless phone coordination to determine arrival timelines.</span></li>
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span><strong class="text-brand-green-dark">Zero Recourse:</strong> No admin tracking or mediation in case of damage or disputes.</span></li>
+            </ul>
+          </div>
+          <!-- ServEase -->
+          <div class="relative bg-white border-2 border-brand-green rounded-3xl p-10 shadow-2xl shadow-brand-green/5 scroll-reveal">
+            <div class="absolute -top-4 left-10 bg-brand-orange text-white font-heading font-bold text-xs px-4 py-1.5 rounded-full shadow-md shadow-brand-orange/30 uppercase tracking-wider">Recommended Option</div>
+            <h3 class="font-heading font-bold text-2xl text-brand-green-dark mb-2">ServEase Platform Bookings</h3>
+            <p class="text-sm text-brand-green uppercase tracking-wide font-semibold mb-8">Vetted service delivery ecosystem</p>
+            <ul class="flex flex-col gap-6">
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span><strong class="text-brand-green-dark">Vetted Providers:</strong> Secure credentials checking, CNIC validation, and deposit checks.</span></li>
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span><strong class="text-brand-green-dark">Clear Pricing:</strong> Verified hourly charges posted transparently. Settle directly.</span></li>
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span><strong class="text-brand-green-dark">Live Status Tracker:</strong> View exact dispatch milestones: 'Accepted', 'On the Way', 'Completed'.</span></li>
+              <li class="flex items-start gap-4 text-[15px]"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg><span><strong class="text-brand-green-dark">Complaint Moderation:</strong> In-app reporting desk to resolve service disputes with administrative oversight.</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 9. APP SYSTEM PARAMETERS (PRICING)                               -->
+    <!-- ================================================================ -->
+    <section id="pricing" class="py-24 bg-white border-y border-slate-100">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16 scroll-reveal">
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mb-5 tracking-tight">App System Parameters</h2>
+          <p class="text-lg text-brand-muted">Transparent parameters configuration. Settle payments directly with providers. Free standard registration for users.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+
+          <!-- CUSTOMERS -->
+          <div class="pricing-card-3d bg-brand-bg/40 border border-slate-100 rounded-3xl p-10 flex flex-col gap-8 transition-all duration-500 hover:shadow-2xl hover:shadow-brand-green/8 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div>
+              <h3 class="font-heading font-bold text-2xl text-brand-green-dark mb-2">Customer Account</h3>
+              <p class="text-sm text-brand-muted mb-6">Standard booking account for residents</p>
+              <div class="flex items-baseline gap-2">
+                <span class="font-heading font-black text-5xl text-brand-green-dark">FREE</span>
+              </div>
+              <p class="text-sm text-brand-muted mt-2">Zero registration fees or hidden costs</p>
+            </div>
+            <ul class="flex flex-col gap-4 mb-auto">
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Browse verified local technicians</li>
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> In-app booking tracking</li>
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Custom categories matching</li>
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Settle pay directly upon job completion</li>
+            </ul>
+          </div>
+
+          <!-- PROVIDERS -->
+          <div class="pricing-card-3d relative bg-white border-2 border-brand-green rounded-3xl p-10 flex flex-col gap-8 shadow-2xl shadow-brand-green/10 scroll-reveal" data-tilt data-tilt-scale="1.02">
+            <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-green text-white font-heading font-bold text-xs px-5 py-2 rounded-full shadow-lg shadow-brand-green/25 uppercase tracking-wider whitespace-nowrap">💼 Provider Ledger</div>
+            <div>
+              <h3 class="font-heading font-bold text-2xl text-brand-green-dark mb-2">Provider Account</h3>
+              <p class="text-sm text-brand-muted mb-6">Security deposit and commission rate</p>
+              <div class="flex items-baseline gap-2">
+                <span class="font-heading font-black text-5xl text-brand-green">RS 500</span>
+              </div>
+              <p class="text-sm text-brand-green-dark/60 mt-2 font-semibold">Refundable security deposit (verified by admin)</p>
+            </div>
+            <ul class="flex flex-col gap-4 mb-auto">
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Standard 10% commission fee per booking</li>
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Submit custom service category requests</li>
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Manage active wallet transactions</li>
+              <li class="flex items-center gap-3 text-sm font-medium"><svg class="w-5 h-5 text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Direct verification with screenshot upload</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 10. FAQ                                                          -->
+    <!-- ================================================================ -->
+    <section id="faq" class="py-24">
+      <div class="max-w-7xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16 scroll-reveal">
+          <h2 class="font-heading font-bold text-3xl sm:text-4xl text-brand-green-dark mb-5 tracking-tight">Frequently Asked Questions</h2>
+          <p class="text-lg text-brand-muted">Everything you need to know about the ServEase service network.</p>
+        </div>
+        <div class="max-w-3xl mx-auto flex flex-col gap-5">
+          <details class="group bg-white border border-slate-100 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-brand-green/20 scroll-reveal" id="faq-item-1">
+            <summary class="flex items-center justify-between p-6 font-heading font-semibold text-lg text-brand-green-dark cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              How are service providers verified?
+              <svg class="w-5 h-5 text-brand-muted transition-transform duration-300 group-open:rotate-180 group-open:text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="px-6 pb-6 border-t border-slate-50"><p class="text-[15px] text-brand-muted leading-relaxed pt-4">All technicians must register their full CNIC front/back images, years of experience, and bio profile. Furthermore, they are required to submit a PKR 500 security deposit screenshot, which is manually verified by the administrative team before approval.</p></div>
+          </details>
+          <details class="group bg-white border border-slate-100 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-brand-green/20 scroll-reveal" id="faq-item-2">
+            <summary class="flex items-center justify-between p-6 font-heading font-semibold text-lg text-brand-green-dark cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              Can I request a custom service category?
+              <svg class="w-5 h-5 text-brand-muted transition-transform duration-300 group-open:rotate-180 group-open:text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="px-6 pb-6 border-t border-slate-50"><p class="text-[15px] text-brand-muted leading-relaxed pt-4">Yes. If you have a specific trade or service request that is not in the system, providers can submit custom requests directly to our administrators through their dashboards for immediate category addition.</p></div>
+          </details>
+          <details class="group bg-white border border-slate-100 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-brand-green/20 scroll-reveal" id="faq-item-3">
+            <summary class="flex items-center justify-between p-6 font-heading font-semibold text-lg text-brand-green-dark cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              How are booking disputes or complaints resolved?
+              <svg class="w-5 h-5 text-brand-muted transition-transform duration-300 group-open:rotate-180 group-open:text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="px-6 pb-6 border-t border-slate-50"><p class="text-[15px] text-brand-muted leading-relaxed pt-4">In case of any issues, either customer or provider can file an in-app complaint linked to the specific booking. Admins review each complaint log and can warn, dismiss, or suspend the accounts of bad actors.</p></div>
+          </details>
+          <details class="group bg-white border border-slate-100 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-brand-green/20 scroll-reveal" id="faq-item-4">
+            <summary class="flex items-center justify-between p-6 font-heading font-semibold text-lg text-brand-green-dark cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+              What is the standard commission rate?
+              <svg class="w-5 h-5 text-brand-muted transition-transform duration-300 group-open:rotate-180 group-open:text-brand-green shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <div class="px-6 pb-6 border-t border-slate-50"><p class="text-[15px] text-brand-muted leading-relaxed pt-4">We maintain a flat 10% commission rate on total booking values. This commission accumulates in the provider's wallet and is periodically resolved via admin verified payments.</p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- 11. FINAL CTA                                                    -->
+    <!-- ================================================================ -->
+    <section class="px-6 pb-24">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-16 bg-brand-green-dark rounded-3xl px-10 sm:px-16 py-16 items-center relative overflow-hidden shadow-2xl shadow-brand-green-dark/20 scroll-reveal">
+          <!-- Decorative glow -->
+          <div class="absolute -top-12 -right-12 w-64 h-64 bg-gradient-radial from-brand-orange/20 to-transparent z-0"></div>
+          <div class="absolute -bottom-20 -left-20 w-48 h-48 bg-gradient-radial from-brand-green/10 to-transparent z-0"></div>
+
+          <div class="flex flex-col gap-5 relative z-10 text-center lg:text-left">
+            <h2 class="font-heading font-bold text-3xl sm:text-4xl text-white leading-tight">Hire trusted technicians in seconds.</h2>
+            <p class="text-lg text-emerald-100">Say goodbye to sketchy classifieds. Connect with verified, ratings-backed providers on the go.</p>
+            <div class="flex flex-col sm:flex-row gap-4 mt-4 justify-center lg:justify-start">
+              <a href="#how-it-works" class="inline-flex items-center justify-center font-heading font-semibold text-lg px-8 py-4 rounded-2xl bg-white text-brand-green-dark hover:bg-brand-bg hover:-translate-y-1 hover:shadow-xl transition-all duration-300" id="cta-get-started-btn">Get Started with ServEase</a>
+            </div>
+          </div>
+          <div class="relative flex justify-center items-center z-10 perspective-container">
+            <div class="phone-tilt-wrapper w-full max-w-[220px]" data-tilt>
+              <div class="phone-frame relative w-full bg-[#0b0f19] border-[10px] border-[#1e293b] rounded-[36px] shadow-2xl shadow-black/30 overflow-hidden" style="padding-top:177.78%">
+                <div class="absolute top-2 left-1/2 -translate-x-1/2 w-[80px] h-[18px] bg-black rounded-xl z-20"></div>
+                <div class="absolute inset-0 rounded-[24px] overflow-hidden"><img src="assets/dashboard.png" alt="ServEase App UI" class="w-full h-full object-cover object-top" loading="lazy"></div>
+                <div class="absolute inset-0 bg-gradient-to-br from-white/[0.12] to-transparent pointer-events-none z-30"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================================================================== -->
+  <!-- 12. FOOTER                                                         -->
+  <!-- ================================================================== -->
+  <footer class="bg-brand-green-dark text-slate-300 pt-20 pb-12 border-t-4 border-brand-green">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
+      <div class="flex flex-col gap-6">
+        <a href="#" class="flex items-center gap-3" id="footer-logo-link">
+          <img src="assets/logo.png" alt="ServEase Logo" class="w-9 h-9 rounded-xl" width="36" height="36">
+          <span class="font-heading font-extrabold text-2xl text-white">Serv<span class="text-brand-orange">Ease</span></span>
+        </a>
+        <p class="text-sm text-emerald-100/75 leading-relaxed">Instantly book verified, rating-backed local technicians. ServEase organizes home services like cleaning, tailoring, beauty, Mehndi, and education into an easy booking portal.</p>
+        <p class="text-xs text-emerald-100/80 mt-1">CEO: <strong class="text-white">Ayesha Liaquat Ali</strong> | Developer: <strong class="text-white">ServEase Team</strong></p>
+        <p class="text-xs text-brand-muted/70 mt-1">&copy; 2026 ServEase App. All rights reserved.</p>
+      </div>
+      <div>
+        <h3 class="font-heading font-bold text-base uppercase tracking-wide text-white mb-6">Product</h3>
+        <ul class="flex flex-col gap-4">
+          <li><a href="#features" class="text-sm text-slate-300 hover:text-white transition-colors">Features</a></li>
+          <li><a href="#providers" class="text-sm text-slate-300 hover:text-white transition-colors">Verified Providers</a></li>
+          <li><a href="#how-it-works" class="text-sm text-slate-300 hover:text-white transition-colors">How It Works</a></li>
+          <li><a href="#faq" class="text-sm text-slate-300 hover:text-white transition-colors">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="font-heading font-bold text-base uppercase tracking-wide text-white mb-6">Legal</h3>
+        <ul class="flex flex-col gap-4 mb-6">
+          <li><a href="privacy.html" class="text-sm text-slate-300 hover:text-white transition-colors">Privacy Policy</a></li>
+          <li><a href="terms.html" class="text-sm text-slate-300 hover:text-white transition-colors">Terms of Service</a></li>
+          <li><a href="data-deletion.html" class="text-sm text-slate-300 hover:text-white transition-colors">Data Deletion</a></li>
+        </ul>
+        <h3 class="font-heading font-bold text-base uppercase tracking-wide text-white mb-4">Connect</h3>
+        <div class="flex gap-4 mb-4">
+          <a href="#" aria-label="Facebook" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-300 hover:bg-brand-green hover:text-white hover:-translate-y-1 transition-all" id="social-fb"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+          <a href="#" aria-label="Twitter" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-300 hover:bg-brand-green hover:text-white hover:-translate-y-1 transition-all" id="social-tw"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg></a>
+          <a href="#" aria-label="LinkedIn" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-300 hover:bg-brand-green hover:text-white hover:-translate-y-1 transition-all" id="social-li"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a>
+        </div>
+        <p class="text-xs text-slate-500">Built with modern service security. No tracking cookies.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="index.js"></script>
+</body>
+</html>

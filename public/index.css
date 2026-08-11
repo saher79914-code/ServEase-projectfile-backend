@@ -1,0 +1,159 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ServEase Custom Stylesheet — Official Green & Orange Brand Styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Custom Variables and Global Resets */
+:root {
+  --brand-green: #1B8B4B;
+  --brand-green-dark: #145E33;
+  --brand-orange: #E8845A;
+  --brand-bg: #F5F8F0;
+  --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Background Pattern matching official palette */
+body {
+  background-image: 
+    radial-gradient(#cce0d2 1.2px, transparent 1.2px), 
+    radial-gradient(#cce0d2 1.2px, #f5f8f0 1.2px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+}
+
+/* Dark Mode Footer Background */
+.bg-navy-dark {
+  background-color: #0b0f19;
+}
+
+/* Custom Gradients */
+.bg-gradient-radial {
+  background-image: radial-gradient(var(--tw-gradient-stops));
+}
+
+/* 3D Perspective container for Mockups */
+.perspective-container {
+  perspective: 1200px;
+}
+
+.phone-tilt-wrapper {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+.phone-frame {
+  transform: translateZ(20px);
+  box-shadow: 0 30px 60px -15px rgba(20, 94, 51, 0.25),
+              0 0 50px 0 rgba(27, 139, 75, 0.12);
+}
+
+/* Micro-Animations & Floating Badges */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0) translateZ(35px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) translateZ(35px) rotate(1deg);
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translateY(0) translateZ(35px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) translateZ(35px) rotate(-1deg);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 5s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+.animate-float-fast {
+  animation: float-fast 4s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+/* Pulse Dot indicator */
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s infinite ease-in-out;
+}
+
+/* 3D Feature Card Hover Effects */
+.feature-card-3d, .pricing-card-3d {
+  transition: var(--transition-smooth);
+  transform-style: preserve-3d;
+}
+
+.feature-card-3d:hover {
+  transform: translateY(-6px) translateZ(10px) rotateX(1deg);
+}
+
+/* Step Numbers bounce details */
+.step-number-3d {
+  transition: var(--transition-smooth);
+}
+.step-number-3d:hover {
+  transform: scale(1.08) rotate(3deg);
+  background-color: var(--brand-green);
+  color: white;
+}
+
+/* Scroll Reveal animation effects */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.scroll-reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* FAQ Details transitions */
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+details {
+  transition: max-height 0.3s ease-out;
+  max-height: 80px; /* Adjust as needed */
+}
+
+details[open] {
+  max-height: 400px;
+}
+
+/* Hamburger animations */
+#mobile-nav-toggle.open .hamburger-bar:nth-child(1) {
+  transform: rotate(45deg) translate(3px, -2px);
+}
+
+#mobile-nav-toggle.open .hamburger-bar:nth-child(2) {
+  opacity: 0;
+}
+
+#mobile-nav-toggle.open .hamburger-bar:nth-child(3) {
+  transform: rotate(-45deg) translate(3px, 2px);
+}
