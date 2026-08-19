@@ -13,7 +13,7 @@ const getSettings = async (req, res) => {
         success: true,
         settings: {
           commission_rate: 10,
-          security_deposit_amount: 2000,
+          security_deposit_amount: 500,
           security_deposit_required: true,
           app_name: "ServEase",
           support_email: "adminservease@gmail.com",
@@ -62,7 +62,7 @@ const updateSettings = async (req, res) => {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           commission_rate ?? 10,
-          security_deposit_amount ?? 2000,
+          security_deposit_amount ?? 500,
           security_deposit_required ?? true,
           app_name ?? "ServEase",
           support_email ?? "adminservease@gmail.com",

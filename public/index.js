@@ -129,33 +129,43 @@ async function fetchVerifiedProviders() {
   // Fallback mock data matching actual app services
   const mockProviders = [
     {
-      id: 1,
-      name: "Ahmed Khan",
-      service: "Full Home Painting",
+      id: 70,
+      name: "Atiya Tariq",
+      service: "Professional Mehndi Art",
+      category: "Mehndi",
+      rating: 4.9,
+      rate: "500.00",
+      jobs_done: 48,
+      is_verified: 1
+    },
+    {
+      id: 71,
+      name: "Saher",
+      service: "Luxury Embroidery & Crafts",
       category: "Crafts",
-      rating: 4.9,
-      rate: "1500.00",
-      jobs_done: 142,
-      is_verified: 1
-    },
-    {
-      id: 2,
-      name: "Fatima Ali",
-      service: "Deep House Cleaning",
-      category: "Cleaning",
       rating: 4.8,
-      rate: "2000.00",
-      jobs_done: 98,
+      rate: "250.00",
+      jobs_done: 35,
       is_verified: 1
     },
     {
-      id: 3,
-      name: "Bilal Raza",
-      service: "Custom Sewing & Fit",
-      category: "Tailoring",
+      id: 74,
+      name: "Ayesha",
+      service: "Academic Tutoring & Courses",
+      category: "Education",
       rating: 4.9,
-      rate: "1800.00",
-      jobs_done: 115,
+      rate: "350.00",
+      jobs_done: 52,
+      is_verified: 1
+    },
+    {
+      id: 75,
+      name: "Insa",
+      service: "Bridal & Party Makeup",
+      category: "Beauty",
+      rating: 4.9,
+      rate: "500.00",
+      jobs_done: 29,
       is_verified: 1
     }
   ];
