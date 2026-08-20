@@ -12,6 +12,7 @@ const {
     rejectProvider,
     deleteProviderAccount,
     getAcceptanceList,
+    getAcceptanceCounts,
 } = require("../controllers/providerController");
 
 // routes
@@ -19,6 +20,7 @@ router.get("/pending", getPendingProviders);
 router.put("/approve/:id", approveProvider);
 router.put("/reject/:id", rejectProvider);
 router.get("/acceptance-list", getAcceptanceList);
+router.get("/acceptance-counts", getAcceptanceCounts);
 router.delete("/remove-account/:id", deleteProviderAccount);
 
 module.exports = router;

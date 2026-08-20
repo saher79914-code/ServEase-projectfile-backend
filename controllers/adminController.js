@@ -32,6 +32,18 @@ exports.getDashboardStats = async (req, res) => {
       `SELECT COUNT(*) AS securityDeposits 
        FROM provider_profiles WHERE security_deposit_status = 'verified'`);
 
+    // Pending counts for Admin Drawer badges
+    const [[{ pendingCommissions }]] = await db.query(
+      `SELECT COUNT(*) AS pendingCommissions FROM commission_payments WHERE status = 'submitted'`);
+    const [[{ pendingSecurityDeposits }]] = await db.query(
+      `SELECT COUNT(*) AS pendingSecurityDeposits FROM provider_profiles WHERE security_deposit_status = 'submitted'`);
+    const [[{ unreadNotifications }]] = await db.query(
+      `SELECT COUNT(*) AS unreadNotifications FROM notifications WHERE role = 'admin' AND is_read = 0`);
+
+    // Admin profile info
+    const [[adminUser]] = await db.query(
+      `SELECT full_name, email FROM users WHERE role = 'admin' LIMIT 1`);
+
     // Security deposit total amount (from app_settings.security_deposit_amount)
     const [[{ securityAmount }]] = await db.query(
       `SELECT COALESCE(
@@ -46,6 +58,11 @@ exports.getDashboardStats = async (req, res) => {
       totalUsers, totalCustomers, totalProviders,
       totalServices, totalBookings, openComplaints,
       pendingProviders,
+      pendingCommissions: parseInt(pendingCommissions || 0),
+      pendingSecurityDeposits: parseInt(pendingSecurityDeposits || 0),
+      unreadNotifications: parseInt(unreadNotifications || 0),
+      adminName: adminUser ? adminUser.full_name : "Admin",
+      adminEmail: adminUser ? adminUser.email : "admin@servease.pk",
       commissionEarned:  parseFloat(commissionEarned),
       commissionRate,
       securityDeposits:  parseInt(securityDeposits),

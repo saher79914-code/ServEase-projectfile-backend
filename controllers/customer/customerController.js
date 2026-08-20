@@ -280,7 +280,7 @@ exports.submitComplaint = async (req, res) => {
     try {
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'New Complaint',
+         SELECT id, 'admin', 'New Complaint',
                 CONCAT('New complaint filed against a provider (booking #', ?, ')'), 'complaint', 0
          FROM users WHERE role = 'admin' LIMIT 1`, [booking_id]);
     } catch (e) { console.error('Notif error:', e.message); }
@@ -315,11 +315,37 @@ exports.submitRating = async (req, res) => {
     try {
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'New Rating Received',
+         SELECT id, 'admin', 'New Rating Received',
                 CONCAT('A provider received a ', ?, '-star rating'), 'system', 0
          FROM users WHERE role = 'admin' LIMIT 1`, [rating]);
     } catch (e) { console.error('Notif error:', e.message); }
 
     res.json({ message: "Rating submitted" });
   } catch (err) { res.status(500).json({ message: err.message }); }
+};
+
+// PUT cancel booking
+exports.cancelBooking = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [[booking]] = await db.query(
+      `SELECT * FROM bookings WHERE id = ?`, [id]);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    if (booking.status === 'completed') {
+      return res.status(400).json({ success: false, message: "Cannot cancel a completed booking" });
+    }
+
+    await db.query(`UPDATE bookings SET status = 'cancelled' WHERE id = ?`, [id]);
+
+    try {
+      await db.query(
+        `INSERT INTO notifications (user_id, role, title, message, type, is_read)
+         VALUES (?, 'provider', 'Booking Cancelled', CONCAT('Booking #', ?, ' has been cancelled by the customer.'), 'booking', 0)`,
+        [booking.provider_id, id]
+      );
+    } catch (e) { console.error('Notif error:', e.message); }
+
+    res.json({ success: true, message: "Booking cancelled successfully" });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };

@@ -12,6 +12,7 @@ router.get("/providers", ctrl.getProviders);
 router.get("/provider/:id", ctrl.getProviderDetail);
 router.post("/bookings",    ctrl.createBooking);
 router.get("/bookings",     ctrl.getMyBookings);
+router.put("/bookings/:id/cancel", ctrl.cancelBooking);
 
 router.get ("/profile",         ctrl.getProfile);
 router.put ("/profile",         upload.single("profile_image"), ctrl.updateProfile);

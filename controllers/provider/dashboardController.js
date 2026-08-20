@@ -348,7 +348,7 @@ exports.submitComplaint = async (req, res) => {
     try {
       await db.query(
         `INSERT INTO notifications (user_id, role, title, message, type, is_read)
-         SELECT id, 'customer', 'New Complaint',
+         SELECT id, 'admin', 'New Complaint',
                 CONCAT('New complaint filed against a customer (booking #', ?, ')'), 'complaint', 0
          FROM users WHERE role = 'admin' LIMIT 1`, [booking_id]);
     } catch (e) { console.error('Notif error:', e.message); }
