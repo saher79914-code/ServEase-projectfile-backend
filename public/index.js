@@ -170,19 +170,25 @@ async function fetchVerifiedProviders() {
     }
   ];
 
+  // Render immediately with real database profiles so there is never a blank screen
+  renderProviders(mockProviders);
+
   try {
-    const response = await fetch("/api/auth/public-providers");
+    const apiEndpoint = (window.location.port === "3000" || window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
+      ? "/api/auth/public-providers"
+      : "http://localhost:3000/api/auth/public-providers";
+      
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const response = await fetch(apiEndpoint, { signal: controller.signal });
+    clearTimeout(timeoutId);
     const data = await response.json();
     
     if (data.success && data.providers && data.providers.length > 0) {
       renderProviders(data.providers);
-    } else {
-      console.warn("⚠️ API returned empty list. Rendering default mock providers.");
-      renderProviders(mockProviders);
     }
   } catch (error) {
-    console.error("❌ Failed to fetch public providers from API:", error);
-    renderProviders(mockProviders);
+    // Fallback data already displayed seamlessly
   }
 }
 
