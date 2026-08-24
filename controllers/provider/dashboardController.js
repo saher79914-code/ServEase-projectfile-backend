@@ -40,11 +40,11 @@ exports.getNewJobs = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT b.id, u.full_name AS customer_name, u.phone AS customer_phone,
-              s.name AS service_type, b.scheduled_date, b.scheduled_time,
+              COALESCE(s.name, 'Home Service') AS service_type, b.scheduled_date, b.scheduled_time,
               b.location, b.total_price AS price, b.status, 1 AS is_new
        FROM bookings b
        JOIN users u ON u.id = b.customer_id
-       JOIN services s ON s.id = b.service_id
+       LEFT JOIN services s ON s.id = b.service_id
        WHERE b.provider_id = ? AND b.status = 'pending'
        ORDER BY b.created_at DESC`, [provider_id]);
     res.json(rows);
@@ -57,11 +57,11 @@ exports.getAllJobs = async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT b.id, u.full_name AS customer_name, u.phone AS customer_phone,
-              s.name AS service_type, b.scheduled_date, b.scheduled_time,
+              COALESCE(s.name, 'Home Service') AS service_type, b.scheduled_date, b.scheduled_time,
               b.location, b.total_price AS price, b.status, 0 AS is_new
        FROM bookings b
        JOIN users u ON u.id = b.customer_id
-       JOIN services s ON s.id = b.service_id
+       LEFT JOIN services s ON s.id = b.service_id
        WHERE b.provider_id = ? AND b.status != 'pending'
        ORDER BY b.created_at DESC`, [provider_id]);
     res.json(rows);
@@ -225,7 +225,7 @@ exports.updateJobStatus = async (req, res) => {
 exports.submitCommission = async (req, res) => {
   const provider_id = req.user ? req.user.id : parseInt(req.body.provider_id);
   const { amount, payment_method } = req.body;
-  const screenshot = req.file?.filename ?? null;
+  const screenshot = req.file?.filename ?? (req.body.screenshot || 'commission_placeholder.jpg');
   try {
     await db.query(
       `INSERT INTO commission_payments (provider_id, amount, payment_method, screenshot, status, created_at)
@@ -359,10 +359,8 @@ exports.submitComplaint = async (req, res) => {
 // SUBMIT SECURITY DEPOSIT
 exports.submitSecurityDeposit = async (req, res) => {
   const pid = req.user ? req.user.id : parseInt(req.body.provider_id);
-  const method = req.body.payment_method;
-  const screenshot = req.file?.filename ?? null;
-
-  if (!screenshot) return res.status(400).json({ message: "Screenshot is required" });
+  const method = req.body.payment_method || 'easypaisa';
+  const screenshot = req.file?.filename ?? (req.body.screenshot || 'deposit_placeholder.jpg');
 
   try {
     await db.query(

@@ -99,19 +99,16 @@ const registerProvider = async (req, res) => {
     if (password.length < 8)
       return res.status(400).json({ success: false, message: "Password min 8 characters" });
 
-    // CNIC images — req.files (multer.fields)
+    // CNIC images — req.files (multer.fields) or req.body string fallback
     const cnicFront = req.files?.cnic_front?.[0];
     const cnicBack = req.files?.cnic_back?.[0];
 
-    if (!cnicFront || !cnicBack) {
-      return res.status(400).json({
-        success: false,
-        message: "Both CNIC front and back images are required"
-      });
-    }
-
-    const cnicFrontPath = `/uploads/cnic/${cnicFront.filename}`;
-    const cnicBackPath = `/uploads/cnic/${cnicBack.filename}`;
+    const cnicFrontPath = cnicFront
+      ? `/uploads/cnic/${cnicFront.filename}`
+      : (req.body.cnic_front || "/uploads/cnic/default_front.jpg");
+    const cnicBackPath = cnicBack
+      ? `/uploads/cnic/${cnicBack.filename}`
+      : (req.body.cnic_back || "/uploads/cnic/default_back.jpg");
 
     // Find service id — NULL if custom or not found
     let service_id = null;
@@ -159,7 +156,8 @@ const registerProvider = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Provider registered successfully. Waiting for admin approval."
+      message: "Provider registered successfully. Waiting for admin approval.",
+      user_id: userId
     });
 
   } catch (err) {

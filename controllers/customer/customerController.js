@@ -11,13 +11,13 @@ exports.getHomeData = async (req, res) => {
       `SELECT id, name, icon, category, price FROM services WHERE is_active = 1 ORDER BY id`);
 
     const [providers] = await db.query(
-      `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+      `SELECT u.id, u.full_name AS name, COALESCE(s.name, 'Home Services') AS service, COALESCE(s.category, 'General') AS category,
               p.rating, p.hourly_rate AS rate, p.approval_status,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done,
               (CASE WHEN p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS is_new
        FROM provider_profiles p
        JOIN users u ON u.id = p.user_id
-       JOIN services s ON s.id = p.service_id
+       LEFT JOIN services s ON s.id = p.service_id
        WHERE p.approval_status = 'approved'
        ORDER BY p.rating DESC LIMIT 10`);
 
@@ -45,13 +45,13 @@ exports.getProviders = async (req, res) => {
   const { category } = req.query;
   try {
     let query = `
-      SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+      SELECT u.id, u.full_name AS name, COALESCE(s.name, 'Home Services') AS service, COALESCE(s.category, 'General') AS category,
              p.rating, p.hourly_rate AS rate, p.approval_status,
              (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done,
              (CASE WHEN p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS is_new
       FROM provider_profiles p
       JOIN users u ON u.id = p.user_id
-      JOIN services s ON s.id = p.service_id
+      LEFT JOIN services s ON s.id = p.service_id
       WHERE p.approval_status = 'approved'`;
 
     const params = [];
@@ -82,13 +82,13 @@ exports.getProviderDetail = async (req, res) => {
   const providerId = parseInt(req.params.id);
   try {
     const [[provider]] = await db.query(
-      `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+      `SELECT u.id, u.full_name AS name, COALESCE(s.name, 'Home Services') AS service, COALESCE(s.category, 'General') AS category,
               p.rating, p.hourly_rate AS rate, p.approval_status,
               u.address AS location, p.bio,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
        FROM provider_profiles p
        JOIN users u ON u.id = p.user_id
-       JOIN services s ON s.id = p.service_id
+       LEFT JOIN services s ON s.id = p.service_id
        WHERE u.id = ?`, [providerId]);
 
     if (!provider) return res.status(404).json({ message: "Provider not found" });
@@ -109,7 +109,7 @@ exports.getProviderDetail = async (req, res) => {
       bio:              provider.bio ?? '',
       is_verified:      provider.approval_status === 'approved' ? 1 : 0,
       services_offered: services.map(s => s.name),
-      reviews:          [], // reviews table baad mein add hogi
+      reviews:          [],
     });
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
@@ -117,15 +117,52 @@ exports.getProviderDetail = async (req, res) => {
 // POST create booking
 exports.createBooking = async (req, res) => {
   const customer_id = req.user ? req.user.id : parseInt(req.body.customer_id);
-  const { provider_id, service_id, scheduled_date, scheduled_time, location, total_price } = req.body;
+  const { provider_id, service_id, scheduled_date, location, total_price } = req.body;
+  let rawTime = req.body.scheduled_time || "10:00:00";
+
+  // Parse time format if passed as 12-hour AM/PM (e.g. "10:00 AM" or "02:30 PM")
+  let formattedTime = "10:00:00";
+  try {
+    if (typeof rawTime === "string") {
+      const match = rawTime.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+      if (match) {
+        let hours = parseInt(match[1]);
+        const minutes = match[2];
+        const seconds = match[3] || "00";
+        const ampm = match[4] ? match[4].toUpperCase() : null;
+
+        if (ampm === "PM" && hours < 12) hours += 12;
+        if (ampm === "AM" && hours === 12) hours = 0;
+
+        formattedTime = `${String(hours).padStart(2, "0")}:${minutes}:${seconds}`;
+      } else if (rawTime.includes(":")) {
+        formattedTime = rawTime;
+      }
+    }
+  } catch (e) {
+    formattedTime = "10:00:00";
+  }
+
   try {
     const [[profile]] = await db.query(
-      `SELECT service_id FROM provider_profiles WHERE user_id = ?`, [provider_id]);
+      `SELECT service_id, hourly_rate FROM provider_profiles WHERE user_id = ?`, [provider_id]);
+
+    let finalServiceId = profile?.service_id || service_id;
+    if (finalServiceId) {
+      const [[exists]] = await db.query(`SELECT id FROM services WHERE id = ? LIMIT 1`, [finalServiceId]);
+      if (!exists) finalServiceId = null;
+    }
+    if (!finalServiceId) {
+      const [[firstService]] = await db.query(`SELECT id FROM services ORDER BY id ASC LIMIT 1`);
+      finalServiceId = firstService ? firstService.id : null;
+    }
+
+    const finalPrice = total_price || profile?.hourly_rate || 500;
 
     const [result] = await db.query(
       `INSERT INTO bookings (customer_id, provider_id, service_id, scheduled_date, scheduled_time, location, total_price, status, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-      [customer_id, provider_id, profile?.service_id ?? service_id, scheduled_date, scheduled_time, location, total_price]);
+      [customer_id, provider_id, finalServiceId, scheduled_date || new Date().toISOString().split('T')[0], formattedTime, location || '', finalPrice]);
 
     // ── Customer ko confirmation ──
     await db.query(
@@ -139,10 +176,10 @@ exports.createBooking = async (req, res) => {
        VALUES (?, 'provider', 'New Booking Request', 'You have a new booking request. Check your jobs.', 'booking', 0)`,
       [provider_id]);
 
-    res.json({ message: "Booking created", booking_id: result.insertId });
+    res.json({ success: true, message: "Booking created", booking_id: result.insertId });
   } catch (err) {
     console.error('BOOKING ERROR:', err.message);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -151,11 +188,11 @@ exports.getMyBookings = async (req, res) => {
   const customerId = req.user ? req.user.id : parseInt(req.query.customer_id);
   try {
     const [rows] = await db.query(
-      `SELECT b.id, b.provider_id, u.full_name AS provider_name, s.name AS service_name,
+      `SELECT b.id, b.provider_id, u.full_name AS provider_name, COALESCE(s.name, 'Home Service') AS service_name,
               b.scheduled_date, b.scheduled_time, b.status, b.total_price
        FROM bookings b
        JOIN users u ON u.id = b.provider_id
-       JOIN services s ON s.id = b.service_id
+       LEFT JOIN services s ON s.id = b.service_id
        WHERE b.customer_id = ?
        ORDER BY b.created_at DESC`, [customerId]);
     res.json(rows);

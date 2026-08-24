@@ -9,11 +9,11 @@ exports.getProfile = async (req, res) => {
     const [[data]] = await db.query(
       `SELECT u.full_name, u.phone, u.email, u.address, u.profile_image,
               p.bio, p.years_of_experience, p.approval_status, p.rating,
-              s.name AS service_name, p.hourly_rate,
+              COALESCE(s.name, 'Home Service') AS service_name, p.hourly_rate,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
        FROM provider_profiles p
        JOIN users u ON u.id = p.user_id
-       JOIN services s ON s.id = p.service_id
+       LEFT JOIN services s ON s.id = p.service_id
        WHERE p.user_id = ?`, [pid]);
 
     if (!data) return res.status(404).json({ message: "Provider not found" });
@@ -33,22 +33,31 @@ exports.updateProfile = async (req, res) => {
   }
 
   try {
+    const [[currentUser]] = await db.query(`SELECT full_name, phone, address FROM users WHERE id = ?`, [pid]);
+    const updatedName = full_name !== undefined && full_name !== null ? full_name : (currentUser?.full_name || '');
+    const updatedPhone = phone !== undefined && phone !== null ? phone : (currentUser?.phone || '');
+    const updatedAddress = address !== undefined && address !== null ? address : (currentUser?.address || '');
+
     if (profileImagePath) {
       await db.query(
         `UPDATE users SET full_name = ?, phone = ?, address = ?, profile_image = ? WHERE id = ?`,
-        [full_name, phone, address, profileImagePath, pid]);
+        [updatedName, updatedPhone, updatedAddress, profileImagePath, pid]);
     } else {
       await db.query(
         `UPDATE users SET full_name = ?, phone = ?, address = ? WHERE id = ?`,
-        [full_name, phone, address, pid]);
+        [updatedName, updatedPhone, updatedAddress, pid]);
     }
     
+    const [[currentProfile]] = await db.query(`SELECT bio, hourly_rate FROM provider_profiles WHERE user_id = ?`, [pid]);
+    const updatedBio = bio !== undefined && bio !== null ? bio : (currentProfile?.bio || '');
+    const updatedRate = hourly_rate !== undefined && hourly_rate !== null ? hourly_rate : (currentProfile?.hourly_rate || 0);
+
     await db.query(
       `UPDATE provider_profiles SET bio = ?, hourly_rate = ? WHERE user_id = ?`,
-      [bio, hourly_rate, pid]);
+      [updatedBio, updatedRate, pid]);
       
-    res.json({ message: "Profile updated", profile_image: profileImagePath });
-  } catch (err) { res.status(500).json({ message: err.message, stack: err.stack }); }
+    res.json({ success: true, message: "Profile updated", profile_image: profileImagePath });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 };
 
 // GET provider reviews

@@ -24,7 +24,9 @@ router.get("/:id", getUserById);
 router.post("/", addUser);
 
 router.patch("/:id/block", blockUser);
+router.put("/:id/block", blockUser);
 
 router.patch("/:id/unblock", unblockUser);
+router.put("/:id/unblock", unblockUser);
 
 module.exports = router;

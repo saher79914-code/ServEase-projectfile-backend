@@ -34,7 +34,7 @@ exports.getDashboardStats = async (req, res) => {
 
     // Pending counts for Admin Drawer badges
     const [[{ pendingCommissions }]] = await db.query(
-      `SELECT COUNT(*) AS pendingCommissions FROM commission_payments WHERE status = 'submitted'`);
+      `SELECT COUNT(*) AS pendingCommissions FROM commission_payments WHERE status IN ('pending', 'submitted')`);
     const [[{ pendingSecurityDeposits }]] = await db.query(
       `SELECT COUNT(*) AS pendingSecurityDeposits FROM provider_profiles WHERE security_deposit_status = 'submitted'`);
     const [[{ unreadNotifications }]] = await db.query(

@@ -14,7 +14,7 @@ exports.getAllBookings = async (req, res) => {
        FROM bookings b
        JOIN users u_c    ON u_c.id = b.customer_id
        JOIN users u_p    ON u_p.id = b.provider_id
-       JOIN services s   ON s.id   = b.service_id
+       LEFT JOIN services s ON s.id = b.service_id
        ORDER BY b.created_at DESC`
     );
     res.json(rows);

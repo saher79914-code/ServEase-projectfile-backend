@@ -25,15 +25,14 @@ const sendOtp = async (req, res) => {
       return res.status(409).json({ success: false, message: "Email already registered" });
 
     const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // Pehle purana OTP delete karo agar tha
     await db.query("DELETE FROM email_otps WHERE email = ?", [email]);
 
-    // Naya OTP save karo
+    // Naya OTP save karo (15 minutes validity using database clock)
     await db.query(
-      "INSERT INTO email_otps (email, otp, expires_at) VALUES (?, ?, ?)",
-      [email, otp, expiresAt]
+      "INSERT INTO email_otps (email, otp, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE))",
+      [email, otp]
     );
 
     try {
@@ -63,17 +62,23 @@ const verifyOtp = async (req, res) => {
     if (!email || !otp)
       return res.status(400).json({ success: false, message: "Email and OTP required" });
 
+    // Check valid non-expired OTP using DB clock
     const [rows] = await db.query(
-      "SELECT * FROM email_otps WHERE email = ? AND otp = ? ORDER BY created_at DESC LIMIT 1",
-      [email, otp]
+      "SELECT * FROM email_otps WHERE email = ? AND otp = ? AND expires_at >= NOW() ORDER BY id DESC LIMIT 1",
+      [email, otp.trim()]
     );
 
-    if (rows.length === 0)
+    if (rows.length === 0) {
+      // Check if OTP existed but expired
+      const [anyRows] = await db.query(
+        "SELECT * FROM email_otps WHERE email = ? AND otp = ? ORDER BY id DESC LIMIT 1",
+        [email, otp.trim()]
+      );
+      if (anyRows.length > 0) {
+        return res.status(400).json({ success: false, message: "Verification code expired. Please request a new one." });
+      }
       return res.status(400).json({ success: false, message: "Invalid verification code" });
-
-    const record = rows[0];
-    if (new Date() > new Date(record.expires_at))
-      return res.status(400).json({ success: false, message: "Verification code expired" });
+    }
 
     // OTP verified — delete karo
     await db.query("DELETE FROM email_otps WHERE email = ?", [email]);
@@ -107,15 +112,14 @@ const forgotPassword = async (req, res) => {
 
     const user = rows[0];
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
     // Pehle purana token delete karo
     await db.query("DELETE FROM password_resets WHERE email = ?", [email]);
 
-    // Token save karo
+    // Token save karo (60 minutes validity using DB clock)
     await db.query(
-      "INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)",
-      [email, resetToken, expiresAt]
+      "INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 60 MINUTE))",
+      [email, resetToken]
     );
 
     // Dynamically resolve base URL using request host/protocol so local phone/emulator and live server URLs work automatically
@@ -161,19 +165,14 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: "Password must be at least 8 characters" });
 
     const [rows] = await db.query(
-      "SELECT * FROM password_resets WHERE token = ? LIMIT 1",
+      "SELECT * FROM password_resets WHERE token = ? AND expires_at >= NOW() LIMIT 1",
       [token]
     );
 
     if (rows.length === 0)
-      return res.status(400).json({ success: false, message: "Invalid or expired reset link" });
+      return res.status(400).json({ success: false, message: "Invalid or expired reset link. Please request a new one." });
 
     const record = rows[0];
-    // Timezone-safe comparison using database clock values
-    const [[timeCheck]] = await db.query("SELECT NOW() AS now_time, ? AS expires_time", [record.expires_at]);
-    if (new Date(timeCheck.now_time).getTime() > new Date(timeCheck.expires_time).getTime())
-      return res.status(400).json({ success: false, message: "Reset link expired. Please request a new one." });
-
     const hashed = await bcrypt.hash(new_password, 12);
 
     await db.query("UPDATE users SET password = ? WHERE email = ?", [hashed, record.email]);
@@ -199,18 +198,12 @@ const verifyResetToken = async (req, res) => {
       return res.status(400).json({ success: false, message: "Token required" });
 
     const [rows] = await db.query(
-      "SELECT * FROM password_resets WHERE token = ? LIMIT 1",
+      "SELECT email FROM password_resets WHERE token = ? AND expires_at >= NOW() LIMIT 1",
       [token]
     );
 
     if (rows.length === 0)
-      return res.status(400).json({ success: false, valid: false, message: "Invalid token" });
-
-    const record = rows[0];
-    // Timezone-safe comparison using database clock values
-    const [[timeCheck]] = await db.query("SELECT NOW() AS now_time, ? AS expires_time", [record.expires_at]);
-    if (new Date(timeCheck.now_time).getTime() > new Date(timeCheck.expires_time).getTime())
-      return res.status(400).json({ success: false, valid: false, message: "Token expired" });
+      return res.status(400).json({ success: false, valid: false, message: "Invalid or expired token" });
 
     return res.status(200).json({ success: true, valid: true, email: rows[0].email });
   } catch (err) {
@@ -253,13 +246,13 @@ const getPublicProviderDetail = async (req, res) => {
   const providerId = parseInt(req.params.id);
   try {
     const [[provider]] = await db.query(
-      `SELECT u.id, u.full_name AS name, s.name AS service, s.category,
+      `SELECT u.id, u.full_name AS name, COALESCE(s.name, 'Home Services') AS service, COALESCE(s.category, 'General') AS category,
               p.rating, p.hourly_rate AS rate, p.approval_status,
               u.address AS location, p.bio,
               (SELECT COUNT(*) FROM bookings WHERE provider_id = u.id AND status = 'completed') AS jobs_done
        FROM provider_profiles p
        JOIN users u ON u.id = p.user_id
-       JOIN services s ON s.id = p.service_id
+       LEFT JOIN services s ON s.id = p.service_id
        WHERE u.id = ?`, [providerId]);
 
     if (!provider) return res.status(404).json({ success: false, message: "Provider not found" });
