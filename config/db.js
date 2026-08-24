@@ -6,7 +6,7 @@ const db = mysql.createPool({
   port:     process.env.DB_PORT     ? parseInt(process.env.DB_PORT) : 3306,
   user:     process.env.DB_USER     || "admin",
   password: process.env.DB_PASS     !== undefined ? process.env.DB_PASS : (process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : "YourStrongPassword"),
-  database: process.env.DB_NAME     || "auth_db",
+  database: process.env.DB_NAME     || "serve_ease",
   waitForConnections: true,
   connectionLimit: 10,
 });
