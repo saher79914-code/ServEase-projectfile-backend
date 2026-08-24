@@ -4,8 +4,8 @@ const mysql = require("mysql2/promise");
 const db = mysql.createPool({
   host:     process.env.DB_HOST     || "localhost",
   port:     process.env.DB_PORT     ? parseInt(process.env.DB_PORT) : 3306,
-  user:     process.env.DB_USER     || "root",
-  password: process.env.DB_PASS     !== undefined ? process.env.DB_PASS : (process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : ""),
+  user:     process.env.DB_USER     || "admin",
+  password: process.env.DB_PASS     !== undefined ? process.env.DB_PASS : (process.env.DB_PASSWORD !== undefined ? process.env.DB_PASSWORD : "YourStrongPassword"),
   database: process.env.DB_NAME     || "auth_db",
   waitForConnections: true,
   connectionLimit: 10,
